@@ -174,6 +174,15 @@ class FeatureExtractionRolled:
         stop = timeit.default_timer()
         print('time for STFT : %f' % (stop - start))
 
+        # Saving orientation map
+        new_dir_map = (np.degrees(dir_map) + 90).astype(np.uint8)
+        new_dir_map[new_dir_map < 0] += 180
+        new_dir_map[new_dir_map >= 180] -= 180
+        new_dir_map = (new_dir_map / 1.5).astype(np.uint8)
+
+        fname = os.path.join(output_dir, "%s_bori.%s" % img_name)
+        cv2.imwrite(fname, new_dir_map)
+
         # Creating templates
         blkH = h // block_size
         blkW = w // block_size
