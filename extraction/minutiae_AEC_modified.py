@@ -1,42 +1,47 @@
-import numpy as np
 import argparse
+import glob
+import os
+
+import numpy as np
+import scipy.misc
+from scipy import misc
+import cv2
+import tensorflow as tf
+
 from tensorpack import *
 from tensorpack.utils.viz import *
 from tensorpack.tfutils.summary import add_moving_summary
 from tensorpack.tfutils.scope_utils import auto_reuse_variable_scope
-from tensorpack.utils.globvars import globalns as opt
-import tensorflow as tf
-import scipy.misc
-import glob
-import os
-import cv2
+# from tensorpack.utils.globvars import globalns as opt
 from tensorpack import (Trainer, QueueInput, TowerContext)
+
 import prepare_data
 import preprocessing as LP
-from scipy import misc
 import show
 
-
 # global vars
-opt.SHAPE = 64
-opt.BATCH = 128
+# opt.SHAPE = 64
+# opt.BATCH = 128
 
 
 class ImportGraph():
+    """Graph for extracting minutiae"""
+    
     def __init__(self, model_dir):
         # create local graph and use it in the session
         self.graph = tf.Graph()
-        self.sess = tf.Session(graph=self.graph)
+        self.sess = tf.compat.v1.Session(graph=self.graph)
         self.weight = get_weights(128, 128, 12, sigma=None)
+
         with self.graph.as_default():
             meta_file, ckpt_file = get_model_filenames(os.path.expanduser(model_dir))
             model_dir_exp = os.path.expanduser(model_dir)
-            saver = tf.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
+            saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
             saver.restore(self.sess, os.path.join(model_dir_exp, ckpt_file))
 
-            self.images_placeholder = tf.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')
+            self.images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')
             output_name = 'reconstruction/gen:0'
-            self.minutiae_cylinder_placeholder = tf.get_default_graph().get_tensor_by_name(output_name)
+            self.minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
             self.shape = self.minutiae_cylinder_placeholder.get_shape()
 
     def run(self, img, minu_thr=0.2):
@@ -161,8 +166,8 @@ class ImageFromFile_AutoEcoder_Prediction(RNGDataFlow):
             h, w, c = im.shape
             im.astype(float)
             im = im / 128.0 - 1
-            for i in xrange(0, h - opt.SHAPE, opt.SHAPE // 2):
-                for j in xrange(0, w - opt.SHAPE, opt.SHAPE // 2):
+            for i in range(0, h - opt.SHAPE, opt.SHAPE // 2):
+                for j in range(0, w - opt.SHAPE, opt.SHAPE // 2):
                     patch = im[i:i + opt.SHAPE, j:j + opt.SHAPE, :]
                     yield [patch]
 
@@ -523,7 +528,7 @@ def minutiae_extraction3(model_path, sample_path, imgs, output_name='reconstruct
                     for i in range(0, h - opt.SHAPE + 1, opt.SHAPE // 2):
 
                         for j in range(0, w - opt.SHAPE + 1, opt.SHAPE // 2):
-                            print j
+                            print(j)
                             patch = img[i:i + opt.SHAPE, j:j + opt.SHAPE, np.newaxis]
                             x.append(j)
                             y.append(i)
@@ -574,7 +579,7 @@ def minutiae_extraction_latent(model_path, sample_path, imgs, output_name='recon
                 images_placeholder = tf.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')  # sub:0
                 minutiae_cylinder_placeholder = tf.get_default_graph().get_tensor_by_name(output_name)
                 for k, file in enumerate(imgs):
-                    print file
+                    print(file)
                     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
                     u, texture = LP.FastCartoonTexture(img)
                     img = texture / 128.0 - 1
@@ -588,7 +593,7 @@ def minutiae_extraction_latent(model_path, sample_path, imgs, output_name='recon
                     for i in range(0, h - opt.SHAPE + 1, opt.SHAPE // 2):
 
                         for j in range(0, w - opt.SHAPE + 1, opt.SHAPE // 2):
-                            print j
+                            print(j)
                             patch = img[i:i + opt.SHAPE, j:j + opt.SHAPE, np.newaxis]
                             x.append(j)
                             y.append(i)
@@ -647,7 +652,7 @@ def minutiae_whole_image(model_path, sample_path, imgs, output_name='reconstruct
 
                     minutiae = prepare_data.refine_minutiae(minutiae, dist_thr=10, ori_dist=np.pi / 4)
                     prepare_data.show_minutiae(img0, minutiae)
-                    print n
+                    print(n)
 
 
 def get_weights(h, w, c, sigma=None):
@@ -725,9 +730,9 @@ def compare_AEM_with_MMM(model_path, img_path='/Data/Latent/NISTSD27/image/',
         input_minu = np.loadtxt(manu_files[i])
         input_minu[:, 2] = input_minu[:, 2] / 180.0 * np.pi
         minutiae_set.append(input_minu)
-        print i
+        print(i)
         show.show_minutiae_sets(img, minutiae_set, mask=None, block=False, fname=fname)
-        print fname
+        print(fname)
 
 
 def get_args():
@@ -771,7 +776,7 @@ def get_config(log_dir, datadir, model):
             session_init=SaverRestore(args.load) if args.load else None
         ), 0
     elif model == 'AEC_Model':
-        print model
+        print(model)
         return TrainConfig(
             dataflow=dataset,
             callbacks=[ModelSaver(keep_recent=True)],
@@ -781,7 +786,7 @@ def get_config(log_dir, datadir, model):
             session_init=SaverRestore(args.load) if args.load else None
         ), 1
     elif model == 'UNet_Model':
-        print model
+        print(model)
         return TrainConfig(
             dataflow=dataset,
             callbacks=[ModelSaver(keep_recent=True)],
@@ -792,7 +797,7 @@ def get_config(log_dir, datadir, model):
         ), 2
     else:
         pdb.set_trace()
-        print 'unknow model:' + model
+        print('unknow model:' + model)
         return None
 
 
@@ -835,7 +840,7 @@ if __name__ == '__main__':
             f.write(str(choice) + '\n')
             for arg in vars(args):
                 f.write(arg + ' ' + str(getattr(args, arg)) + '\n')
-                print arg
-        print choice
+                print(arg)
+        print(choice)
         if config is not None:
             AutoEncoderTrainer(config).train()

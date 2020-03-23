@@ -36,6 +36,9 @@ def load_model(model, filename, cuda):
                     filename, map_location=lambda storage, loc: storage)
     else:
         raise (Exception("No checkpoint found at '{}'".format(filename)))
+
+    print("Checkpoint state_dict %s" % state_dict)
+    
     for key_model in list(model):
         model_dict = model[key_model].state_dict()
         update_dict = {}
@@ -58,6 +61,8 @@ def setup(filename_model, cuda):
         for i, key in enumerate(keys):
             model[key] = model[key].cuda()
 
+    print("Model to load (name): %s" % filename_model)
+    print("Model to load (description): %s" % str(model))
     model = load_model(model, filename_model, cuda)
 
     return model
@@ -122,7 +127,9 @@ def template_compression(input_dir='', output_dir=None, model_path=None, isLaten
         print ("File list empty", file_list)
         return
 
-    file_list.sort(key=lambda filename: int(''.join(filter(str.isdigit, filename.encode("utf-8")))))
+    # file_list.sort(key=lambda filename: int(''.join(filter(str.isdigit, filename.encode("utf-8")))))
+    print(file_list)
+    file_list.sort(key=lambda filename: int(''.join(filter(str.isdigit, filename))))
 
     # Create Model
     # filename_model = './dim_reduction/testmodel'

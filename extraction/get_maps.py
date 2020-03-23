@@ -599,7 +599,7 @@ def get_maps_STFT(img, patch_size=64, block_size=16, preprocess=False):
     blkW = (w - patch_size) // block_size + 1
     local_info = np.empty((blkH, blkW), dtype=object)
 
-    x, y = np.meshgrid(range(-patch_size / 2, patch_size / 2), range(-patch_size / 2, patch_size / 2))
+    x, y = np.meshgrid(range(-patch_size // 2, patch_size // 2), range(-patch_size // 2, patch_size // 2))
     x = x.astype(np.float32)
     y = y.astype(np.float32)
     r = np.sqrt(x*x + y*y) + 0.0001

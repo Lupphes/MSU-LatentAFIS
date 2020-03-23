@@ -331,6 +331,7 @@ def parse_arguments(argv):
     parser.add_argument('--image_path', type=str,
                         help='data path for images')
     return parser.parse_args(argv)
+
 if __name__ == '__main__':
     args = parse_arguments(sys.argv[1:])
     if args.gpu:

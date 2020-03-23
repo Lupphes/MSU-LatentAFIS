@@ -1,0 +1,7 @@
+models/
+msuenv/
+Papers/
+
+*.pyc
+
+notes.txt

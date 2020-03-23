@@ -28,6 +28,7 @@ class ImportGraph():
         self.graph = tf.Graph()
         self.sess = tf.Session(graph=self.graph)
         self.weight = get_weights(128, 128, 12, sigma=None)
+
         with self.graph.as_default():
             meta_file, ckpt_file = get_model_filenames(os.path.expanduser(model_dir))
             model_dir_exp = os.path.expanduser(model_dir)
@@ -153,8 +154,8 @@ class ImageFromFile_AutoEcoder_Prediction(RNGDataFlow):
             h, w, c = im.shape
             im.astype(float)
             im = im / 128.0 - 1
-            for i in xrange(0, h - opt.SHAPE, opt.SHAPE // 2):
-                for j in xrange(0, w - opt.SHAPE, opt.SHAPE // 2):
+            for i in range(0, h - opt.SHAPE, opt.SHAPE // 2):
+                for j in range(0, w - opt.SHAPE, opt.SHAPE // 2):
                     patch = im[i:i + opt.SHAPE, j:j + opt.SHAPE, :]
                     yield [patch]
 

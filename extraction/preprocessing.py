@@ -19,8 +19,8 @@ def nextpow2(x):
 
 def adjust_image_size(img, block_size=16):
     h, w = img.shape[:2]
-    blkH = h / block_size
-    blkW = w / block_size
+    blkH = h // block_size
+    blkW = w // block_size
     ovph = 0  # (h-blkH*block_size)//2
     ovpw = 0  # (w-blkH*block_size)//2
 
