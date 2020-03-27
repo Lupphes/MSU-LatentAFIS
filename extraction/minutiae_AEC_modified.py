@@ -12,7 +12,7 @@ from tensorpack import *
 from tensorpack.utils.viz import *
 from tensorpack.tfutils.summary import add_moving_summary
 from tensorpack.tfutils.scope_utils import auto_reuse_variable_scope
-# from tensorpack.utils.globvars import globalns as opt
+#from tensorpack.utils.globvars import globalns as opt
 from tensorpack import (Trainer, QueueInput, TowerContext)
 
 import prepare_data
