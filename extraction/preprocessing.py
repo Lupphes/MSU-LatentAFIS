@@ -63,7 +63,8 @@ def LowpassFiltering(img, L):
     h, w = img.shape
     h2, w2 = L.shape
 
-    img = cv2.copyMakeBorder(img, 0, h2-h, 0, w2-w, cv2.BORDER_CONSTANT, value=0)
+    img = cv2.copyMakeBorder(img, 0, h2 - h, 0, w2 - w,
+                             cv2.BORDER_CONSTANT, value=0)
 
     img_fft = np.fft.fft2(img)
     img_fft = np.fft.fftshift(img_fft)
@@ -86,8 +87,11 @@ def compute_gradient_norm(input):
 
 
 def code_step(X, D, n_nonzero_coefs=6):
-    model = sklearn.linear_model.OrthogonalMatchingPursuit(n_nonzero_coefs=n_nonzero_coefs, fit_intercept=False,
-                                                           normalize=False)
+    model = sklearn.linear_model.OrthogonalMatchingPursuit(
+        n_nonzero_coefs=n_nonzero_coefs,
+        fit_intercept=False,
+        normalize=False
+    )
     model.fit(D.T, X.T)
     return model.coef_
 
@@ -105,7 +109,8 @@ def denoising_using_dictonary(img, dict):
     patches = []
     for i in range(0, blkH):
         for j in range(0, blkW):
-            patch = img[i * block_size:i * block_size + patch_size, j * block_size:j * block_size + patch_size].copy()
+            patch = img[i * block_size:i * block_size + patch_size,
+                        j * block_size:j * block_size + patch_size].copy()
             patch = patch - np.mean(patch)
             patch = np.reshape(patch, (nrof_pixels,))
             patches.append(patch)
@@ -117,7 +122,8 @@ def denoising_using_dictonary(img, dict):
         for j in range(0, blkW):
             rec_patch = np.reshape(rec_patches[n], (patch_size, patch_size))
             n += 1
-            rec_img[i * block_size:i * block_size + patch_size, j * block_size:j * block_size + patch_size] += rec_patch
+            rec_img[i * block_size:i * block_size + patch_size,
+                    j * block_size:j * block_size + patch_size] += rec_patch
 
     plt.subplot(121), plt.imshow(img, cmap='gray')
     plt.title('Input patch'), plt.xticks([]), plt.yticks([])
@@ -133,7 +139,8 @@ def FastCartoonTexture(img, sigma=2.5, show=False):
     w2 = 2 ** nextpow2(w)
 
     FFTsize = np.max([h2, w2])
-    x, y = np.meshgrid(range(-int(FFTsize / 2), int(FFTsize / 2)), range(-int(FFTsize / 2), int(FFTsize / 2)))
+    x, y = np.meshgrid(range(-int(FFTsize / 2), int(FFTsize / 2)),
+                       range(-int(FFTsize / 2), int(FFTsize / 2)))
     r = np.sqrt(x * x + y * y) + 0.0001
     r = r / FFTsize
 
@@ -177,7 +184,8 @@ def STFT(img, R=100):
     block_size = 16
     ovp_size = (patch_size - block_size) // 2
     h0, w0 = img.shape
-    img = cv2.copyMakeBorder(img, ovp_size, ovp_size, ovp_size, ovp_size, cv2.BORDER_CONSTANT, value=0)
+    img = cv2.copyMakeBorder(img, ovp_size, ovp_size, ovp_size, ovp_size,
+                             cv2.BORDER_CONSTANT, value=0)
     h, w = img.shape
     blkH = (h - patch_size) // block_size
     blkW = (w - patch_size) // block_size
@@ -190,15 +198,16 @@ def STFT(img, R=100):
     FLOW = patch_size / RMAX
     FHIGH = patch_size / RMIN
     patch_size2 = int(patch_size / 2)
-    x, y = np.meshgrid(range(-patch_size2, patch_size2), range(-patch_size2, patch_size2))
-    r = np.sqrt(x*x + y*y) + 0.0001
+    x, y = np.meshgrid(range(-patch_size2, patch_size2),
+                       range(-patch_size2, patch_size2))
+    r = np.sqrt(x * x + y * y) + 0.0001
 
-    dRLow = 1. / (1 + (r / FHIGH)**4)  # low pass     butterworth     filter
-    dRHigh = 1. / (1 + (FLOW / r)**4)  # high    pass     butterworth     filter
+    dRLow = 1. / (1 + (r / FHIGH)**4)  # low pass butterworth filter
+    dRHigh = 1. / (1 + (FLOW / r)**4)  # high pass butterworth filter
     dBPass = dRLow * dRHigh  # bandpass
 
     sigma = patch_size / 3
-    weight = np.exp(-(x*x + y*y) / (sigma*sigma))
+    weight = np.exp(-(x * x + y * y) / (sigma * sigma))
     rec_img = np.zeros((h, w))
     for i in range(0, blkH):
         for j in range(0, blkW):
@@ -212,16 +221,17 @@ def STFT(img, R=100):
             norm = np.linalg.norm(filtered)
             filtered = filtered / (norm + 0.0001)
             f_ifft = np.fft.ifftshift(filtered)
-            rec_patch = np.real(np.fft.ifft2(f_ifft))
+            rec_patch = np.real(np.fft.ifft2(f_ifft)) * weight
             rec_img[i * block_size:i * block_size + patch_size,
-                    j * block_size:j * block_size + patch_size] += rec_patch * weight
+                    j * block_size:j * block_size + patch_size] += rec_patch
 
     rec_img = rec_img[ovp_size:ovp_size + h0, ovp_size:ovp_size + w0]
     img = (rec_img - np.median(rec_img)) / (np.std(rec_img) + 0.000001)
     img = (img * 14 + 127)
     img[img < 0] = 0
     img[img > 255] = 255
-    rec_img = (rec_img - np.min(rec_img)) / (np.max(rec_img) - np.min(rec_img) + 0.0001)
+    rec_img = (rec_img - np.min(rec_img))
+    rec_img /= (np.max(rec_img) - np.min(rec_img) + 0.0001)
 
     return img
 
@@ -237,7 +247,8 @@ def local_equalize(imgfiles):
         sigma_est = np.mean(estimate_sigma(img, multichannel=True))
         print("estimated noise standard deviation = {}".format(sigma_est))
 
-        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(8, 6), sharex=True, sharey=True,
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(8, 6),
+                               sharex=True, sharey=True,
                                subplot_kw={'adjustable': 'box-forced'})
 
         # Equalization
@@ -245,7 +256,8 @@ def local_equalize(imgfiles):
         img_eq = rank.equalize(img, selem=selem)
 
         # slow algorithm
-        denoise = denoise_nl_means(img_eq, h=1.15 * sigma_est, fast_mode=False, **patch_kw)
+        denoise = denoise_nl_means(img_eq, h=1.15 * sigma_est,
+                                   fast_mode=False, **patch_kw)
 
         ax[0].imshow(img, cmap='gray')
         ax[0].axis('off')
@@ -271,7 +283,8 @@ def filtering_regional_maxima(imgfiles):
         mask = image
 
         dilated = reconstruction(seed, mask, method='dilation')
-        fig, (ax0, ax1, ax2) = plt.subplots(nrows=1, ncols=3, figsize=(8, 2.5), sharex=True, sharey=True)
+        fig, (ax0, ax1, ax2) = plt.subplots(nrows=1, ncols=3, figsize=(8, 2.5),
+                                            sharex=True, sharey=True)
 
         ax0.imshow(image, cmap='gray')
         ax0.set_title('original image')
@@ -293,7 +306,8 @@ def filtering_regional_maxima(imgfiles):
 
 
 if __name__ == '__main__':
-    # construct ridge structure dictionary for quality estimation or ridge spacing estimation
+    # construct ridge structure dictionary for quality
+    # estimation or ridge spacing estimation
     dict = get_maps.construct_dictionary()
 
     imgfiles = glob.glob('/Data/Latent/NISTSD27/image/*.bmp')
@@ -302,4 +316,5 @@ if __name__ == '__main__':
         img = cv2.imread(imgfile, cv2.IMREAD_GRAYSCALE)
         img = np.asarray(img, np.float32)
         texture = FastCartoonTexture(img)
-        dir_map, _, _ = get_maps.get_maps_STFT(texture, patch_size=64, block_size=16, preprocess=False)
+        dir_map, _, _ = get_maps.get_maps_STFT(texture, patch_size=64,
+                                               block_size=16, preprocess=False)

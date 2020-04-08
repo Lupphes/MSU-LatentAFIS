@@ -17,8 +17,9 @@ import preprocessing
 import descriptor
 import template
 import minutiae_AEC_modified as minutiae_AEC
-import descriptor_PQ
-import descriptor_DR
+
+# import descriptor_PQ
+# import descriptor_DR
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -81,16 +82,16 @@ class FeatureExtractionRolled:
             if x < r or y < r or x > w - r - 1 or y > h - r - 1:
                 flag[i] = 0
             elif(mask[y - r, x - r] == 0 or mask[y - r, x + r] == 0 or
-                mask[y + r, x - r] == 0 or mask[y + r, x + r] == 0):
+                 mask[y + r, x - r] == 0 or mask[y + r, x + r] == 0):
                 flag[i] = 0
-        
+
         # Filtering minutiae
         mnt = mnt[flag > 0, :]
         return mnt
 
     def feature_extraction_single(self, img_file, output_dir=None, ppi=500):
         """Extracting features from a single image"""
-        
+
         # Global param
         block_size = 16
 
@@ -110,11 +111,11 @@ class FeatureExtractionRolled:
 
         # Adjusting image size to block_size
         img = preprocessing.adjust_image_size(img, block_size)
-        
+
         # Converting to gray scale if needed (not-required I think)
         if len(img.shape) > 2:
             img = rgb2gray(img)
-        
+
         # current image shape
         h, w = img.shape
 
@@ -194,7 +195,7 @@ class FeatureExtractionRolled:
         rolled_template.add_minu_template(minu_template)
 
         # Texture template
-        start = timeit.default_timer()        
+        start = timeit.default_timer()
         stride = 16
         x = np.arange(24, w - 24, stride)
         y = np.arange(24, h - 24, stride)
@@ -214,7 +215,7 @@ class FeatureExtractionRolled:
         virtual_minutiae = np.asarray(virtual_minutiae)
 
         if len(virtual_minutiae) > 1000:
-            virtual_minutiae = virtual_minutiae[:1000]        
+            virtual_minutiae = virtual_minutiae[:1000]
         print("Virtual minutiae %d" % len(virtual_minutiae))
 
         # Saving virtual minutiae
@@ -245,7 +246,7 @@ class FeatureExtractionRolled:
     def feature_extraction(self, image_dir, img_type='bmp', template_dir=None,
                            enhancement=False):
         """Feature extraction for a batch of images"""
-        
+
         # Loading image names in input directory
         img_files = glob.glob(image_dir + '*.' + img_type)
         assert(len(img_files) > 0)
@@ -268,7 +269,7 @@ class FeatureExtractionRolled:
                 # Extracting features with enhancement (Missing function)
                 result = self.feature_extraction_single_enhancement(img_file)
                 rolled_template, enhanced_img = result
-                
+
                 # SAving enhanced image
                 if template_dir is not None:
                     enhanced_img = np.asarray(enhanced_img, dtype=np.uint8)
@@ -279,7 +280,7 @@ class FeatureExtractionRolled:
                 rolled_template = self.feature_extraction_single(
                     img_file, output_dir=template_dir
                 )
-            
+
             stop = timeit.default_timer()  # End time
             # Printing total execution time for one image
             print("Total time for extraction: %d" % (stop - start))
@@ -307,22 +308,22 @@ def parse_arguments(argv):
     parser.add_argument(
         '--gpu', help='comma separated list of GPU(s) to use.', default='0'
     )
-    
+
     parser.add_argument(
         '--N1', type=int, default=0,
         help='rolled index from which the enrollment starts'
     )
-    
+
     parser.add_argument(
-        '--N2', type=int, default=2000, 
+        '--N2', type=int, default=2000,
         help='rolled index from which the enrollment starts'
     )
-    
+
     parser.add_argument(
         '--tdir', type=str,
         help='data path for minutiae descriptor and minutiae extraction'
     )
-    
+
     parser.add_argument('--idir', type=str, help='data path for images')
 
     parser.add_argument('--itype', type=str, help='Image type', default="tif")
