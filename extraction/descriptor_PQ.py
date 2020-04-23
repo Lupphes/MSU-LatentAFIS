@@ -331,7 +331,7 @@ def encode_PQ(input_dir, output_dir, fprint_type):
 
             # for rolled
             rolled_template_files = glob.glob(input_dir + '*.dat')
-            rolled_template_files.sort(key=lambda filename: int(''.join(filter(str.isdigit, filename.encode("utf-8")))))
+            # rolled_template_files.sort(key=lambda filename: int(''.join(filter(str.isdigit, filename.encode("utf-8")))))
             #
             n = 0
             for i, file in enumerate(rolled_template_files):

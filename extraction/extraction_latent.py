@@ -26,8 +26,8 @@ import show
 import enhancement_AEC
 import loggabor
 
-# import descriptor_PQ
-# import descriptor_DR
+import descriptor_PQ
+import descriptor_DR
 
 # Setting environment vars for tensorflow
 os.environ['KERAS_BACKEND'] = 'tensorflow'
@@ -669,36 +669,32 @@ if __name__ == '__main__':
         t_dir = args.tdir if args.tdir else config['LatentTemplateDirectory']
         template_fname = main_single_image(args.i, t_dir)
 
-        """
         print("Finished feature extraction. Starting dimensionality reduction")
         descriptor_DR.template_compression_single(
-            input_file=template_fname, output_dir=template_dir,
+            input_file=template_fname, output_dir=t_dir,
             model_path=config['DimensionalityReductionModel'],
             isLatent=True, config=None
         )
         print("Finished dimensionality reduction. Starting product quantization...")
         descriptor_PQ.encode_PQ_single(
             input_file=template_fname,
-            output_dir=template_dir, fprint_type='latent'
+            output_dir=t_dir, fprint_type='latent'
         )
         print("Finished product quantization. Exiting...")
-        """
 
     else:   # Handling a directory of images
 
         tdir = args.tdir if args.tdir else config['LatentTemplateDirectory']
         main(args.idir, tdir)
 
-        """
         print("Finished feature extraction. Starting dimensionality reduction...")
         descriptor_DR.template_compression(
-            input_dir=template_dir, output_dir=template_dir,
+            input_dir=tdir, output_dir=tdir,
             model_path=config['DimensionalityReductionModel'],
             isLatent=True, config=None
         )
         print("Finished dimensionality reduction. Starting product quantization...")
         descriptor_PQ.encode_PQ(
-            input_dir=template_dir, output_dir=template_dir, fprint_type='latent'
+            input_dir=tdir, output_dir=tdir, fprint_type='latent'
         )
-        print ("Finished product quantization. Exiting...")
-        """
+        print("Finished product quantization. Exiting...")

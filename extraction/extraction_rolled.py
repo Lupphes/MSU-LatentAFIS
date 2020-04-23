@@ -18,8 +18,8 @@ import descriptor
 import template
 import minutiae_AEC_modified as minutiae_AEC
 
-# import descriptor_PQ
-# import descriptor_DR
+import descriptor_PQ
+import descriptor_DR
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -337,7 +337,7 @@ if __name__ == '__main__':
 
     # Parsing arguments
     args = parse_arguments(sys.argv[1:])
-    
+
     # Configuring CUDA for GPUs
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -377,14 +377,13 @@ if __name__ == '__main__':
         image_dir=img_dir, template_dir=temp_dir, enhancement=False,
         img_type=args.itype
     )
-    
-    """  # Blocking this piece of code because it is buggy
+
+    # Blocking this piece of code because it is buggy
     print("Finished feature extraction. Starting dimensionality reduction...")
-    descriptor_DR.template_compression(input_dir=template_dir, output_dir=template_dir,
+    descriptor_DR.template_compression(input_dir=temp_dir, output_dir=temp_dir,
                                        model_path=config['DimensionalityReductionModel'],
                                        isLatent=False, config=None)
 
     print("Finished dimensionality reduction. Starting product quantization...")
-    descriptor_PQ.encode_PQ(input_dir=template_dir, output_dir=template_dir, fprint_type='rolled')
+    descriptor_PQ.encode_PQ(input_dir=temp_dir, output_dir=temp_dir, fprint_type='rolled')
     print("Finished product quantization. Exiting...")
-    """
