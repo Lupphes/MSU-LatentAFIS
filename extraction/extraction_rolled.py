@@ -216,7 +216,7 @@ class FeatureExtractionRolled:
                 mf.write("%d %d %f %f\n" % m)
 
         # Plotting minutiae
-        fname = os.path.join(output_dir, "%s_mntp.tif" % img_name[0])
+        fname = os.path.join(output_dir, "%s_mntp.jpg" % img_name[0])
         show.show_minutiae_sets(mnt_img, [[], mnt], mask=mask,
                                 block=False, fname=fname)
 
