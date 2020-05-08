@@ -13,7 +13,8 @@ import numpy as np
 import cv2
 import scipy.spatial.distance
 
-from skimage import io
+# from skimage import io
+
 from skimage.morphology import binary_opening, binary_closing
 
 import get_maps
