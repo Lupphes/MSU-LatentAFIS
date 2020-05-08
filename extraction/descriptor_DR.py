@@ -123,7 +123,7 @@ def template_compression(input_dir='', output_dir=None, model_path=None, isLaten
     # parse the arguments
     random.seed(0)
     torch.manual_seed(0)
-    cuda = True
+    cuda = False
 
     import glob
     file_list = glob.glob(input_dir + '*.dat')

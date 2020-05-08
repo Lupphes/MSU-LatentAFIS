@@ -116,7 +116,9 @@ class FeatureExtraction_Latent:
         show_minutiae = True
 
         # Loading images
-        img0 = io.imread(img_file, pilmode='L')  # / 255.0
+        # img0 = io.imread(img_file, pilmode='L')  # / 255.0
+        # img0 = io.imread(img_file, as_gray=True)
+        img0 = cv2.imread(img_file, 0)
         img = img0.copy()
 
         # Img name
