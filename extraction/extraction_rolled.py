@@ -151,7 +151,7 @@ class FeatureExtractionRolled:
 
         # Saving texture image
         fname = os.path.join(output_dir, "%s_tex.%s" % img_name)
-        cv2.imwrite(fname, texture_img)
+        cv2.imwrite(fname, texture_img.astype(np.uint8))
 
         mnt_img = texture_img
         if enhancement:
@@ -161,7 +161,7 @@ class FeatureExtractionRolled:
 
             # Saving stft image
             fname = os.path.join(output_dir, "%s_stft.%s" % img_name)
-            cv2.imwrite(fname, stft_texture_img)
+            cv2.imwrite(fname, stft_texture_img.astype(np.uint8))
 
             aec_img = self.enhancement_model.run_whole_image(stft_texture_img)
             stop = timeit.default_timer()
@@ -179,7 +179,7 @@ class FeatureExtractionRolled:
             quality_map_aec, dir_map_aec, fre_map_aec = maps
 
             # Obtaining mask
-            mask = quality_map_aec > 0.35  # 0.45 in latent images
+            mask = quality_map_aec > 0.1  # 0.35  # 0.45 in latent images
             mask = binary_closing(mask, np.ones((3, 3))).astype(np.int)
             mask = binary_opening(mask, np.ones((3, 3))).astype(np.int)
             blkmask_ssim = get_maps.SSIM(stft_texture_img, aec_img, thr=0.2)

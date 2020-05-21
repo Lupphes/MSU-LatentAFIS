@@ -517,8 +517,15 @@ def get_quality_map_dict(img, dict, ori, spacing, block_size=16,
             patch = patch.reshape(patch_size * patch_size,)
             patch = patch - np.mean(patch)
             patch = patch / (np.linalg.norm(patch) + R)
-            patch[patch > t] = 0.0
-            patch[patch < -t] = -0.0
+
+            # patch[patch > t] = 0.0
+            # patch[patch < -t] = -0.0
+            # The above lines are a bug according to
+            # https://github.com/prip-lab/MSU-LatentAFIS/issues/4
+            # The lines should fix this issue
+            patch[patch > t] = t
+            patch[patch < -t] = -t
+
             patches.append(patch)
 
     patches = np.asarray(patches)
@@ -571,8 +578,8 @@ def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16,
     pixel_list = []
 
     r = 1
-    x, y = np.meshgrid(range(-patch_size / 2, patch_size / 2),
-                       range(-patch_size / 2, patch_size / 2))
+    x, y = np.meshgrid(range(-patch_size // 2, patch_size // 2),
+                       range(-patch_size // 2, patch_size // 2))
     x = x.astype(np.float32)
     y = y.astype(np.float32)
     weight = np.exp(-(x * x + y * y) / (patch_size * patch_size / 3.0))
@@ -584,8 +591,14 @@ def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16,
                         j * block_size:j * block_size + patch_size].copy()
             patch = patch - np.median(patch)
             patch = patch / (np.linalg.norm(patch) + R)
-            patch[patch > t] = 0.0
-            patch[patch < -t] = 0.
+
+            # patch[patch > t] = 0.0
+            # patch[patch < -t] = -0.0
+            # The above lines are a bug according to
+            # https://github.com/prip-lab/MSU-LatentAFIS/issues/4
+            # The lines should fix this issue
+            patch[patch > t] = t
+            patch[patch < -t] = -t
 
             patch = patch * weight
             patch = patch.reshape(patch_size * patch_size,)
