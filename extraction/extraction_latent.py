@@ -23,8 +23,10 @@ import filtering
 import descriptor
 import template
 import minutiae_AEC
+# import minutiae_AEC_modified as minutiae_AEC
 import show
 import enhancement_AEC
+# import enhancement_AEC_npy as enhancement_AEC
 import loggabor
 
 import descriptor_PQ
