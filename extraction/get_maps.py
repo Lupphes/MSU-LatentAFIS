@@ -518,13 +518,13 @@ def get_quality_map_dict(img, dict, ori, spacing, block_size=16,
             patch = patch - np.mean(patch)
             patch = patch / (np.linalg.norm(patch) + R)
 
-            # patch[patch > t] = 0.0
-            # patch[patch < -t] = -0.0
+            patch[patch > t] = 0.0
+            patch[patch < -t] = -0.0
             # The above lines are a bug according to
             # https://github.com/prip-lab/MSU-LatentAFIS/issues/4
-            # The lines should fix this issue
-            patch[patch > t] = t
-            patch[patch < -t] = -t
+            # The lines below should fix this issue
+            # patch[patch > t] = t
+            # patch[patch < -t] = -t
 
             patches.append(patch)
 
@@ -557,7 +557,7 @@ def get_quality_map_dict(img, dict, ori, spacing, block_size=16,
 
 
 def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16,
-                                process=False, R=500.0, t=0.5):
+                                process=False, R=500.0, t=0.02):  # t=0.5
     if img.dtype == 'uint8':
         img = img.astype(np.float)
     if process:
@@ -596,7 +596,7 @@ def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16,
             # patch[patch < -t] = -0.0
             # The above lines are a bug according to
             # https://github.com/prip-lab/MSU-LatentAFIS/issues/4
-            # The lines should fix this issue
+            # The lines below should fix this issue
             patch[patch > t] = t
             patch[patch < -t] = -t
 
@@ -614,9 +614,11 @@ def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16,
     for i in range(r, blkH - r):
         for j in range(r, blkW - r):
             quality_map[i, j] = simi[n, similar_ind[n]]
-            dir_map[i, j] = -math.atan2(ori[32 + 64, similar_ind[n]],
-                                        ori[32, similar_ind[n]]) / 2.0
-            fre_map[i, j] = spacing[32, similar_ind[n]]
+            # dir_map[i, j] = -math.atan2(ori[32 + 64, similar_ind[n]],
+            #                             ori[32, similar_ind[n]]) / 2.0
+            # fre_map[i, j] = spacing[32, similar_ind[n]]
+            dir_map[i, j] = ori[similar_ind[n]]
+            fre_map[i, j] = spacing[similar_ind[n]]
             n += 1
 
     for i in range(r):
