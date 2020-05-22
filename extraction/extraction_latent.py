@@ -143,8 +143,8 @@ class FeatureExtraction_Latent:
         h, w = img.shape
 
         # Do not process images larger than 1000x1000
-        if h > 1000 and w > 1000:
-            return None, None
+        # if h > 1000 and w > 1000:
+        #     return None, None
 
         # cropping using two dictionary based approach
         if minu_file is not None:
@@ -169,7 +169,7 @@ class FeatureExtraction_Latent:
         fname = os.path.join(output_dir, "%s_texstft.%s" % img_name)
         cv2.imwrite(fname, stft_texture_img)
         fname = os.path.join(output_dir, "%s_lctg.%s" % img_name)
-        cv2.imwrite(fname, ct_img_g)
+        cv2.imwrite(fname, ct_img_g.astype(np.uint8))
         fname = os.path.join(output_dir, "%s_stft.%s" % img_name)
         cv2.imwrite(fname, stft_img)
         fname = os.path.join(output_dir, "%s_lctgstft.%s" % img_name)
@@ -180,7 +180,7 @@ class FeatureExtraction_Latent:
 
         # saving enhanced image
         fname = os.path.join(output_dir, "%s_aec.%s" % img_name)
-        cv2.imwrite(fname, aec_img)
+        cv2.imwrite(fname, aec_img.astype(np.uint8))
 
         # Quality maps
         maps = get_maps.get_quality_map_dict(
@@ -524,7 +524,7 @@ class FeatureExtraction_Latent:
     def feature_extraction(self, image_dir, template_dir=None,
                            minu_path=None, N1=0, N2=258):
         """Feature extraction for a batch of images"""
-        img_files = glob.glob(image_dir + '*.bmp')
+        img_files = glob.glob(image_dir + '*.tif')
         assert(len(img_files) > 0)
 
         if not os.path.exists(template_dir):

@@ -179,7 +179,7 @@ class FeatureExtractionRolled:
             quality_map_aec, dir_map_aec, fre_map_aec = maps
 
             # Obtaining mask
-            mask = quality_map_aec > 0.1  # 0.35  # 0.45 in latent images
+            mask = quality_map_aec > 0.45  # 0.35  # 0.45 in latent images
             mask = binary_closing(mask, np.ones((3, 3))).astype(np.int)
             mask = binary_opening(mask, np.ones((3, 3))).astype(np.int)
             blkmask_ssim = get_maps.SSIM(stft_texture_img, aec_img, thr=0.2)
@@ -206,6 +206,9 @@ class FeatureExtractionRolled:
 
         # Filtrating minutiae
         mnt = self.remove_spurious_minutiae(mnt, mask)
+
+        # Maximum number of minutiae
+        mnt = mnt[:1000]
 
         # Saving minutiae
         fname = os.path.join(output_dir, "%s_mnt.txt" % img_name[0])
@@ -254,6 +257,7 @@ class FeatureExtractionRolled:
         )
         rolled_template = template.Template()
         rolled_template.add_minu_template(minu_template)
+        print(len(mnt))
 
         # Texture template
         start = timeit.default_timer()
