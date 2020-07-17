@@ -32,6 +32,8 @@ import loggabor
 import descriptor_PQ
 import descriptor_DR
 
+import loadminutiae
+
 # Setting environment vars for tensorflow
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -111,7 +113,8 @@ class FeatureExtraction_Latent:
 
     def feature_extraction_single_latent(self, img_file, output_dir=None,
                                          ppi=500, show_processes=False,
-                                         show_minutiae=False, minu_file=None):
+                                         show_minutiae=False, minu_file=None,
+                                         edited_mnt=False):
         # Params
         block = False
         block_size = 16
@@ -213,45 +216,48 @@ class FeatureExtraction_Latent:
         minutiae_sets = []
 
         # Extracting minutiae from the STFT image
-        mnt_stft = self.minu_model[0].run_whole_image(stft_img, minu_thr=0.05)
-        minutiae_sets.append(mnt_stft)
+        if not edited_mnt:
+            mnt_stft = self.minu_model[0].run_whole_image(stft_img, minu_thr=0.05)
+            minutiae_sets.append(mnt_stft)
 
-        if show_minutiae:
-            fname = root_name + '_stft_mnt.jpeg'
-            show.show_minutiae_sets(stft_img, [input_minu, mnt_stft],
-                                    mask=None, block=block, fname=fname)
+            if show_minutiae:
+                fname = root_name + '_stft_mnt.jpeg'
+                show.show_minutiae_sets(stft_img, [input_minu, mnt_stft],
+                                        mask=None, block=block, fname=fname)
 
-        # saving minutiae
-        fname = os.path.join(output_dir, "%s_stft_mnt.txt" % img_name[0])
-        save_minutiae(mnt_stft, fname)
+            # saving minutiae
+            fname = os.path.join(output_dir, "%s_stft_mnt.txt" % img_name[0])
+            save_minutiae(mnt_stft, fname)
 
         # Extracting minutiae from the contrast enhanced STFT image
-        mnt_stft = self.minu_model[0].run_whole_image(ct_img_stft,
-                                                      minu_thr=0.1)
-        minutiae_sets.append(mnt_stft)
+        if not edited_mnt:
+            mnt_stft = self.minu_model[0].run_whole_image(ct_img_stft,
+                                                          minu_thr=0.1)        
+            minutiae_sets.append(mnt_stft)
 
-        if show_minutiae:
-            fname = root_name + '_ctstft_mnt.jpeg'
-            show.show_minutiae_sets(ct_img_stft, [input_minu, mnt_stft],
-                                    mask=None, block=block, fname=fname)
+            if show_minutiae:
+                fname = root_name + '_ctstft_mnt.jpeg'
+                show.show_minutiae_sets(ct_img_stft, [input_minu, mnt_stft],
+                                        mask=None, block=block, fname=fname)
 
-        # saving minutiae
-        fname = os.path.join(output_dir, "%s_ctstft_mnt.txt" % img_name[0])
-        save_minutiae(mnt_stft, fname)
+            # saving minutiae
+            fname = os.path.join(output_dir, "%s_ctstft_mnt.txt" % img_name[0])
+            save_minutiae(mnt_stft, fname)
 
         # Extracting minutiae from the enhanced image
-        mnt_aec = self.minu_model[1].run_whole_image(aec_img, minu_thr=0.25)
-        mnt_aec = self.remove_spurious_minutiae(mnt_aec, mask)
-        minutiae_sets.append(mnt_aec)
+        if not edited_mnt:
+            mnt_aec = self.minu_model[1].run_whole_image(aec_img, minu_thr=0.25)
+            mnt_aec = self.remove_spurious_minutiae(mnt_aec, mask)
+            minutiae_sets.append(mnt_aec)
 
-        if show_minutiae:
-            fname = root_name + '_aec_mnt.jpeg'
-            show.show_minutiae_sets(aec_img, [input_minu, mnt_aec],
-                                    mask=mask, block=block, fname=fname)
+            if show_minutiae:
+                fname = root_name + '_aec_mnt.jpeg'
+                show.show_minutiae_sets(aec_img, [input_minu, mnt_aec],
+                                        mask=mask, block=block, fname=fname)
 
-        # saving minutiae
-        fname = os.path.join(output_dir, "%s_aec_mnt.txt" % img_name[0])
-        save_minutiae(mnt_aec, fname)
+            # saving minutiae
+            fname = os.path.join(output_dir, "%s_aec_mnt.txt" % img_name[0])
+            save_minutiae(mnt_aec, fname)
 
         # Enhance gaussian contrast image
         enh_contrast_img = filtering.gabor_filtering_pixel2(
@@ -264,21 +270,23 @@ class FeatureExtraction_Latent:
         cv2.imwrite(fname, enh_contrast_img)
 
         # Extracting minutiae from the enhanced contrast gaussian image
-        mnt_contrast = self.minu_model[1].run_whole_image(
-            enh_contrast_img, minu_thr=0.25)
-        mnt_contrast = self.remove_spurious_minutiae(mnt_contrast, mask)
-        minutiae_sets.append(mnt_contrast)
+        if not edited_mnt:
+            mnt_contrast = self.minu_model[1].run_whole_image(
+                enh_contrast_img, minu_thr=0.25)
+            mnt_contrast = self.remove_spurious_minutiae(mnt_contrast, mask)
 
-        if show_minutiae:
-            fname = root_name + '_enhctg_mnt.jpeg'
-            show.show_minutiae_sets(enh_contrast_img,
-                                    [input_minu, mnt_contrast],
-                                    mask=mask, block=block,
-                                    fname=fname)
+            minutiae_sets.append(mnt_contrast)
 
-        # saving minutiae
-        fname = os.path.join(output_dir, "%s_enhctg_mnt.txt" % img_name[0])
-        save_minutiae(mnt_contrast, fname)
+            if show_minutiae:
+                fname = root_name + '_enhctg_mnt.jpeg'
+                show.show_minutiae_sets(enh_contrast_img,
+                                        [input_minu, mnt_contrast],
+                                        mask=mask, block=block,
+                                        fname=fname)
+
+            # saving minutiae
+            fname = os.path.join(output_dir, "%s_enhctg_mnt.txt" % img_name[0])
+            save_minutiae(mnt_contrast, fname)
 
         # Enhance gaussian contrast image CENATAV
         gfilter = loggabor.LogGaborFilter(dir_map_aec + math.pi / 2,
@@ -296,20 +304,21 @@ class FeatureExtraction_Latent:
         cv2.imwrite(fname, bin_image)
 
         # Extracting minutiae from the enhanced contrast gaussian image CENATAV
-        mnt_contrast = self.minu_model[1].run_whole_image(
-            enh_contrast_img, minu_thr=0.25)
-        mnt_contrast = self.remove_spurious_minutiae(mnt_contrast, mask)
+        if not edited_mnt:
+            mnt_contrast = self.minu_model[1].run_whole_image(
+                enh_contrast_img, minu_thr=0.25)
+            mnt_contrast = self.remove_spurious_minutiae(mnt_contrast, mask)
 
-        if show_minutiae:
-            fname = root_name + '_enhctg_mnt2.jpeg'
-            show.show_minutiae_sets(enh_contrast_img,
-                                    [input_minu, mnt_contrast],
-                                    mask=mask, block=block,
-                                    fname=fname)
+            if show_minutiae:
+                fname = root_name + '_enhctg_mnt2.jpeg'
+                show.show_minutiae_sets(enh_contrast_img,
+                                        [input_minu, mnt_contrast],
+                                        mask=mask, block=block,
+                                        fname=fname)
 
-        # saving minutiae
-        fname = os.path.join(output_dir, "%s_enhctg_mnt2.txt" % img_name[0])
-        save_minutiae(mnt_contrast, fname)
+            # saving minutiae
+            fname = os.path.join(output_dir, "%s_enhctg_mnt2.txt" % img_name[0])
+            save_minutiae(mnt_contrast, fname)
 
         # Enhance texture image
         enh_texture_img = filtering.gabor_filtering_pixel2(
@@ -322,19 +331,20 @@ class FeatureExtraction_Latent:
         cv2.imwrite(fname, enh_texture_img)
 
         # Extracting minutiae from the enhanced texture image
-        mnt_texture = self.minu_model[1].run_whole_image(
-            enh_texture_img, minu_thr=0.25)
-        mnt_texture = self.remove_spurious_minutiae(mnt_texture, mask)
-        minutiae_sets.append(mnt_texture)
+        if not edited_mnt:
+            mnt_texture = self.minu_model[1].run_whole_image(
+                enh_texture_img, minu_thr=0.25)
+            mnt_texture = self.remove_spurious_minutiae(mnt_texture, mask)
+            minutiae_sets.append(mnt_texture)
 
-        if show_minutiae:
-            fname = root_name + '_enhtext_mnt.jpeg'
-            show.show_minutiae_sets(enh_texture_img, [input_minu, mnt_texture],
-                                    mask=mask, block=block, fname=fname)
+            if show_minutiae:
+                fname = root_name + '_enhtext_mnt.jpeg'
+                show.show_minutiae_sets(enh_texture_img, [input_minu, mnt_texture],
+                                        mask=mask, block=block, fname=fname)
 
-        # saving minutiae
-        fname = os.path.join(output_dir, "%s_enhtext_mnt.txt" % img_name[0])
-        save_minutiae(mnt_texture, fname)
+            # saving minutiae
+            fname = os.path.join(output_dir, "%s_enhtext_mnt.txt" % img_name[0])
+            save_minutiae(mnt_texture, fname)
 
         # Enhance texture image CENATAV
         enh_texture_img, thr = gfilter.apply(tex_img)
@@ -350,18 +360,34 @@ class FeatureExtraction_Latent:
         cv2.imwrite(fname, bin_image)
 
         # Extracting minutiae from the enhanced texture image CENATAV
-        mnt_texture = self.minu_model[1].run_whole_image(
-            enh_texture_img, minu_thr=0.25)
-        mnt_texture = self.remove_spurious_minutiae(mnt_texture, mask)
+        if not edited_mnt:
+            mnt_texture = self.minu_model[1].run_whole_image(
+                enh_texture_img, minu_thr=0.25)
+            mnt_texture = self.remove_spurious_minutiae(mnt_texture, mask)
 
-        if show_minutiae:
-            fname = root_name + '_enhtext_mnt2.jpeg'
-            show.show_minutiae_sets(enh_texture_img, [input_minu, mnt_texture],
-                                    mask=mask, block=block, fname=fname)
+            if show_minutiae:
+                fname = root_name + '_enhtext_mnt2.jpeg'
+                show.show_minutiae_sets(enh_texture_img, [input_minu, mnt_texture],
+                                        mask=mask, block=block, fname=fname)
 
-        # saving minutiae
-        fname = os.path.join(output_dir, "%s_enhtext_mnt2.txt" % img_name[0])
-        save_minutiae(mnt_texture, fname)
+            # saving minutiae
+            fname = os.path.join(output_dir, "%s_enhtext_mnt2.txt" % img_name[0])
+            save_minutiae(mnt_texture, fname)
+
+        if edited_mnt:
+            print("Using edited minutiae!!!")
+            mnt_filename = "%s.m" % img_file.split('.')[0]
+            mnt = loadminutiae.load_edited_minutiae(mnt_filename)
+            minutiae_sets.append(mnt)
+
+            if show_minutiae:
+                fname = root_name + '_edited_mnt.jpeg'
+                show.show_minutiae_sets(img, [input_minu, mnt],
+                                        mask=mask, block=block, fname=fname)
+
+            # saving minutiae
+            fname = os.path.join(output_dir, "%s_edited_mnt.txt" % img_name[0])
+            save_minutiae(mnt, fname)
 
         # Latent template
         latent_template = template.Template()
@@ -377,26 +403,27 @@ class FeatureExtraction_Latent:
         descriptor_imgs.append(enh_contrast_img)
 
         # Common minutiae sets
-        mnt2 = self.get_common_minutiae(minutiae_sets, thr=2)
-        mnt3 = self.get_common_minutiae(minutiae_sets, thr=3)
+        if not edited_mnt:
+            mnt2 = self.get_common_minutiae(minutiae_sets, thr=2)
+            mnt3 = self.get_common_minutiae(minutiae_sets, thr=3)
 
-        minutiae_sets.append(mnt3)
-        minutiae_sets.append(mnt2)
+            minutiae_sets.append(mnt3)
+            minutiae_sets.append(mnt2)
 
-        if show_minutiae:
-            fname = root_name + '_common1_mnt.jpeg'
-            show.show_minutiae_sets(img, [input_minu, mnt2],
-                                    mask=mask, block=block, fname=fname)
+            if show_minutiae:
+                fname = root_name + '_common1_mnt.jpeg'
+                show.show_minutiae_sets(img, [input_minu, mnt2],
+                                        mask=mask, block=block, fname=fname)
 
-            fname = root_name + '_common2_mnt.jpeg'
-            show.show_minutiae_sets(img, [input_minu, mnt3],
-                                    mask=mask, block=block, fname=fname)
+                fname = root_name + '_common2_mnt.jpeg'
+                show.show_minutiae_sets(img, [input_minu, mnt3],
+                                        mask=mask, block=block, fname=fname)
 
-        # saving minutiae
-        fname = os.path.join(output_dir, "%s_common1_mnt.txt" % img_name[0])
-        save_minutiae(mnt2, fname)
-        fname = os.path.join(output_dir, "%s_common2_mnt.txt" % img_name[0])
-        save_minutiae(mnt3, fname)
+            # saving minutiae
+            fname = os.path.join(output_dir, "%s_common1_mnt.txt" % img_name[0])
+            save_minutiae(mnt2, fname)
+            fname = os.path.join(output_dir, "%s_common2_mnt.txt" % img_name[0])
+            save_minutiae(mnt3, fname)
 
         # End minutiae extraction
         end = timer()
@@ -522,7 +549,7 @@ class FeatureExtraction_Latent:
         return mnt
 
     def feature_extraction(self, image_dir, template_dir=None,
-                           minu_path=None, N1=0, N2=258):
+                           minu_path=None, N1=0, N2=258, edited_mnt=False):
         """Feature extraction for a batch of images"""
         img_files = glob.glob(image_dir + '*.tif')
         assert(len(img_files) > 0)
@@ -552,7 +579,7 @@ class FeatureExtraction_Latent:
             else:
                 latent_t, texture_t = self.feature_extraction_single_latent(
                     img_file, output_dir=template_dir, show_processes=False,
-                    show_minutiae=False
+                    show_minutiae=False, edited_mnt=edited_mnt
                 )
 
             stop = timeit.default_timer()
@@ -599,7 +626,7 @@ def get_feature_extractor():
     )
 
 
-def main(image_dir, template_dir):
+def main(image_dir, template_dir, edited_mnt=False):
     """Main entry-point for processing directories"""
 
     lf_latent = get_feature_extractor()
@@ -610,7 +637,8 @@ def main(image_dir, template_dir):
     print("Starting feature extraction (batch)...")
     lf_latent.feature_extraction(image_dir=image_dir,
                                  template_dir=template_dir,
-                                 minu_path=config['MinuPath'])
+                                 minu_path=config['MinuPath'],
+                                 edited_mnt=edited_mnt)
 
 
 def main_single_image(image_file, template_dir):
@@ -649,6 +677,9 @@ def parse_arguments(argv):
         '--idir', type=str, help='Path to directory containing input images'
     )
     parser.add_argument('--i', type=str, help='Path to single input image')
+
+    parser.add_argument('--edited_mnt', required=False, action='store_true',
+                        help='Use edited minutiae')
 
     return parser.parse_args(argv)
 
@@ -690,7 +721,7 @@ if __name__ == '__main__':
     else:   # Handling a directory of images
 
         tdir = args.tdir if args.tdir else config['LatentTemplateDirectory']
-        main(args.idir, tdir)
+        main(args.idir, tdir, args.edited_mnt)
 
         print("Starting dimensionality reduction...")
         descriptor_DR.template_compression(

@@ -212,10 +212,6 @@ class FeatureExtractionRolled:
             # Maximum number of minutiae
             mnt = mnt[:1000]
 
-            print(type(mnt))
-            print(mnt.shape)
-            print(type(mnt[0]))
-
             # Saving minutiae
             fname = os.path.join(output_dir, "%s_mnt.txt" % img_name[0])
             with open(fname, "w") as mf:
