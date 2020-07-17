@@ -22,6 +22,7 @@ import enhancement_AEC
 import show
 import descriptor_PQ
 import descriptor_DR
+import loadminutiae
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -98,7 +99,7 @@ class FeatureExtractionRolled:
         return mnt
 
     def feature_extraction_single(self, img_file, enhancement=False,
-                                  output_dir=None, ppi=500):
+                                  output_dir=None, ppi=500, edited_mnt=False):
         """Extracting features from a single image"""
 
         # Global param
@@ -198,25 +199,34 @@ class FeatureExtractionRolled:
 
             mnt_img = aec_img
 
-        # Extracting minutiae
-        start = timeit.default_timer()
-        mnt = self.minu_model.run_whole_image(mnt_img, minu_thr=0.15)
-        stop = timeit.default_timer()
-        print('time for minutiae : %f' % (stop - start))
+        if not edited_mnt:
+            # Extracting minutiae
+            start = timeit.default_timer()
+            mnt = self.minu_model.run_whole_image(mnt_img, minu_thr=0.15)
+            stop = timeit.default_timer()
+            print('time for minutiae : %f' % (stop - start))
 
-        # Filtrating minutiae
-        mnt = self.remove_spurious_minutiae(mnt, mask)
+            # Filtrating minutiae
+            mnt = self.remove_spurious_minutiae(mnt, mask)
 
-        # Maximum number of minutiae
-        mnt = mnt[:1000]
+            # Maximum number of minutiae
+            mnt = mnt[:1000]
 
-        # Saving minutiae
-        fname = os.path.join(output_dir, "%s_mnt.txt" % img_name[0])
-        with open(fname, "w") as mf:
-            mf.write("%d\n" % len(mnt))
-            for m in mnt:
-                m = tuple(m)
-                mf.write("%d %d %f %f\n" % m)
+            print(type(mnt))
+            print(mnt.shape)
+            print(type(mnt[0]))
+
+            # Saving minutiae
+            fname = os.path.join(output_dir, "%s_mnt.txt" % img_name[0])
+            with open(fname, "w") as mf:
+                mf.write("%d\n" % len(mnt))
+                for m in mnt:
+                    m = tuple(m)
+                    mf.write("%d %d %f %f\n" % m)
+        else:
+            # Load minutiae
+            mnt_filename = "%s.m" % img_file.split('.')[0]
+            mnt = loadminutiae.load_edited_minutiae(mnt_filename)
 
         # Plotting minutiae
         fname = os.path.join(output_dir, "%s_mntp.jpg" % img_name[0])
@@ -309,7 +319,7 @@ class FeatureExtractionRolled:
         return rolled_template
 
     def feature_extraction(self, image_dir, img_type='bmp', template_dir=None,
-                           enhancement=False):
+                           enhancement=False, edited_mnt=False):
         """Feature extraction for a batch of images"""
 
         # Loading image names in input directory
@@ -333,6 +343,7 @@ class FeatureExtractionRolled:
             # Extracting features without enhancement
             rolled_template = self.feature_extraction_single(
                 img_file, output_dir=template_dir, enhancement=enhancement,
+                edited_mnt=edited_mnt
             )
 
             stop = timeit.default_timer()  # End time
@@ -385,6 +396,9 @@ def parse_arguments(argv):
     parser.add_argument('--enhance', required=False, action='store_true',
                         help='Apply enhancement')
 
+    parser.add_argument('--edited_mnt', required=False, action='store_true',
+                        help='Use edited minutiae')
+
     # Parsing arguments
     return parser.parse_args(argv)
 
@@ -429,14 +443,14 @@ if __name__ == '__main__':
         patch_types=patch_types,
         des_model_dirs=des_model_dirs,
         minu_model_dir=minu_model_dir,
-        enhancement_model_dir=enhance_model_dir
+        enhancement_model_dir=enhance_model_dir,
     )
 
     # Feature extraction
     print("Starting feature extraction (batch)...")
     lf_rolled.feature_extraction(
         image_dir=img_dir, template_dir=temp_dir, enhancement=args.enhance,
-        img_type=args.itype
+        img_type=args.itype, edited_mnt=args.edited_mnt
     )
 
     # Blocking this piece of code because it is buggy
