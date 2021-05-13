@@ -15,7 +15,12 @@ import scipy.spatial.distance
 
 # from skimage import io
 
-from skimage.morphology import binary_opening, binary_closing
+from skimage.morphology import (
+    binary_opening,
+    binary_closing,
+    remove_small_objects
+)
+from scipy.ndimage import label, generate_binary_structure
 
 import get_maps
 import preprocessing
@@ -203,6 +208,19 @@ class FeatureExtraction_Latent:
             interpolation=cv2.INTER_LINEAR
         )
         mask[mask > 0] = 1
+
+        # Keeping only the biggest area in mask
+        structures = generate_binary_structure(mask.ndim, 1)
+        labels = np.zeros_like(mask, dtype=np.int32)
+        label(mask, structures, output=labels)
+        component_sizes = np.bincount(labels.ravel())
+        component_sizes = sorted(component_sizes, reverse=True)
+        print(component_sizes)
+
+        if len(component_sizes) > 1:
+            min_size = component_sizes[1]
+            mask = remove_small_objects(mask.astype(np.bool), min_size=min_size)
+            mask = mask.astype(np.uint8)
 
         # Saving mask
         fname = os.path.join(output_dir, "%s_mask.%s" % img_name)
@@ -609,7 +627,7 @@ class FeatureExtraction_Latent:
     def feature_extraction(self, image_dir, template_dir=None,
                            minu_path=None, N1=0, N2=258, edited_mnt=False):
         """Feature extraction for a batch of images"""
-        img_files = glob.glob(image_dir + '*.tif')
+        img_files = glob.glob(image_dir + '*.bmp')
         assert(len(img_files) > 0)
 
         if not os.path.exists(template_dir):
