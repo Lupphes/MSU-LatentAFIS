@@ -28,6 +28,8 @@ import enhancement_AEC
 import descriptor_PQ
 import descriptor_DR
 
+import loggabor
+
 # Setting environment vars for tensorflow
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -271,6 +273,36 @@ class FeatureExtraction_Latent:
         fname = os.path.join(output_dir, "%s_enhctg_mnt.txt" % img_name[0])
         save_minutiae(mnt_contrast, fname)
 
+        # Enhance gaussian contrast image CENATAV
+        gfilter = loggabor.LogGaborFilter(dir_map_aec + math.pi / 2, fre_map_aec,
+                                          mask=np.ones((h, w)))
+        enh_contrast_img, thr = gfilter.apply(ct_img_g)
+
+        # saving enhanced contrast gaussian image CENATAV
+        fname = os.path.join(output_dir, "%s_enhctg2.%s" % img_name)
+        cv2.imwrite(fname, enh_contrast_img)
+
+        # saving enhanced texture image binarized CENATAV
+        fname = os.path.join(output_dir, "%s_enhctg2_bin.%s" % img_name)
+        bin_image = (enh_contrast_img >= thr).astype(np.uint8) * 255
+        bin_image[mask == 0] = 0
+        cv2.imwrite(fname, bin_image)
+
+        # Extracting minutiae from the enhanced contrast gaussian image CENATAV
+        mnt_contrast = self.minu_model[1].run_whole_image(
+            enh_contrast_img, minu_thr=0.25)
+        mnt_contrast = self.remove_spurious_minutiae(mnt_contrast, mask)
+        minutiae_sets.append(mnt_contrast)
+
+        if show_minutiae:
+            fname = output_dir + os.path.splitext(name)[0] + '_enhctg_mnt2.jpeg'
+            show.show_minutiae_sets(enh_contrast_img, [input_minu, mnt_contrast],
+                                    mask=mask, block=block, fname=fname)
+
+        # saving minutiae
+        fname = os.path.join(output_dir, "%s_enhctg_mnt2.txt" % img_name[0])
+        save_minutiae(mnt_contrast, fname)
+
         # Enhance texture image
         enh_texture_img = filtering.gabor_filtering_pixel2(
             tex_img, dir_map_aec + math.pi / 2, fre_map_aec,
@@ -294,6 +326,34 @@ class FeatureExtraction_Latent:
 
         # saving minutiae
         fname = os.path.join(output_dir, "%s_enhtext_mnt.txt" % img_name[0])
+        save_minutiae(mnt_texture, fname)
+
+        # Enhance texture image CENATAV
+        enh_texture_img, thr = gfilter.apply(tex_img)
+
+        # saving enhanced texture image CENATAV
+        fname = os.path.join(output_dir, "%s_enhtext2.%s" % img_name)
+        cv2.imwrite(fname, enh_texture_img)
+
+        # saving enhanced texture image binarized CENATAV
+        fname = os.path.join(output_dir, "%s_enhtext2_bin.%s" % img_name)
+        bin_image = (enh_texture_img >= thr).astype(np.uint8) * 255
+        bin_image[mask == 0] = 0
+        cv2.imwrite(fname, bin_image)
+
+        # Extracting minutiae from the enhanced texture image CENATAV
+        mnt_texture = self.minu_model[1].run_whole_image(
+            enh_texture_img, minu_thr=0.25)
+        mnt_texture = self.remove_spurious_minutiae(mnt_texture, mask)
+        minutiae_sets.append(mnt_texture)
+
+        if show_minutiae:
+            fname = output_dir + os.path.splitext(name)[0] + '_enhtext_mnt2.jpeg'
+            show.show_minutiae_sets(enh_texture_img, [input_minu, mnt_texture],
+                                    mask=mask, block=block, fname=fname)
+
+        # saving minutiae
+        fname = os.path.join(output_dir, "%s_enhtext_mnt2.txt" % img_name[0])
         save_minutiae(mnt_texture, fname)
 
         # Latent template
