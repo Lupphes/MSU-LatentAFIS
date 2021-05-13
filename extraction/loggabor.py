@@ -133,7 +133,7 @@ class LogGaborFilter():
 
         minimum = np.min(fimage)
         maximum = np.max(fimage)
-        fimage = (fimage - minimum) / (maximum - minimum) * 255        
+        fimage = (fimage - minimum) / (maximum - minimum) * 255
 
         thr = -minimum / (maximum - minimum) * 255
 
