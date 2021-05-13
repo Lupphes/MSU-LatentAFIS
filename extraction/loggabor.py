@@ -130,9 +130,11 @@ class LogGaborFilter():
                 fimage[x0:x1, y0:y1] += dwind
 
         fimage = fimage[ovp_size: -ovp_size, ovp_size: -ovp_size]
+
         minimum = np.min(fimage)
         maximum = np.max(fimage)
         fimage = (fimage - minimum) / (maximum - minimum) * 255        
+
         thr = -minimum / (maximum - minimum) * 255
 
         return fimage, thr

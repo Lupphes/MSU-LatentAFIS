@@ -17,13 +17,14 @@ def load_model(model, filename, cuda):
         state_dict = {}
         if cuda:
             for key in list(model):
-                state_dict[key] = torch.load(os.path.join(filename,
-                                                          'model_%sD_%s.pth' % (key, os.path.basename(filename))))
+                state_dict[key] = torch.load(
+                    os.path.join(filename, 'model_%sD_%s.pth' % (key, os.path.basename(filename))))
         else:
             for key in list(model):
-                state_dict[key] = torch.load(os.path.join(filename,
-                                                          'model_%sD_%s.pth' % (key, os.path.basename(filename))),
-                                             map_location=lambda storage, loc: storage)
+                state_dict[key] = torch.load(
+                    os.path.join(filename, 'model_%sD_%s.pth' % (key, os.path.basename(filename))),
+                    map_location=lambda storage, loc: storage
+                )
     elif os.path.isfile(filename):
         print("Loading dimentionality reduction model: '{}'".format(filename))
         state_dict = {}
@@ -37,15 +38,18 @@ def load_model(model, filename, cuda):
     else:
         raise (Exception("No checkpoint found at '{}'".format(filename)))
 
-    print("Checkpoint state_dict %s" % state_dict)
-    
     for key_model in list(model):
         model_dict = model[key_model].state_dict()
         update_dict = {}
         valid_keys = list(model_dict)
         for i, key in enumerate(state_dict[key_model]):
             update_dict[valid_keys[i]] = state_dict[key_model][key]
-        model[key_model].load_state_dict(update_dict)
+
+        filtered = {
+            k: v for k, v in state_dict[key_model].items()
+            if k in model[key_model].state_dict() and model[key_model].state_dict()[k].shape == state_dict[key_model][k].shape
+        }
+        model[key_model].load_state_dict(filtered)
     return model
 
 
@@ -61,8 +65,6 @@ def setup(filename_model, cuda):
         for i, key in enumerate(keys):
             model[key] = model[key].cuda()
 
-    print("Model to load (name): %s" % filename_model)
-    print("Model to load (description): %s" % str(model))
     model = load_model(model, filename_model, cuda)
 
     return model
@@ -86,7 +88,9 @@ def extract_features(model, dataloader, cuda):
     # extract features
     for i, (data) in enumerate(dataloader):
 
-        inputs.data.resize_(data.size()).copy_(data)
+        with torch.no_grad():
+            # inputs.data.resize_(data.size()).copy_(data)
+            inputs.resize_(data.size()).copy_(data)
 
         # output features
         outputs = {}
@@ -119,17 +123,17 @@ def template_compression(input_dir='', output_dir=None, model_path=None, isLaten
     # parse the arguments
     random.seed(0)
     torch.manual_seed(0)
-    cuda = True
+    cuda = False
 
     import glob
     file_list = glob.glob(input_dir + '*.dat')
     if file_list is None or len(file_list) == 0:
-        print ("File list empty", file_list)
+        print("File list empty", file_list)
         return
 
     # file_list.sort(key=lambda filename: int(''.join(filter(str.isdigit, filename.encode("utf-8")))))
     print(file_list)
-    file_list.sort(key=lambda filename: int(''.join(filter(str.isdigit, filename))))
+    # file_list.sort(key=lambda filename: int(''.join(filter(str.isdigit, filename))))
 
     # Create Model
     # filename_model = './dim_reduction/testmodel'
@@ -141,7 +145,7 @@ def template_compression(input_dir='', output_dir=None, model_path=None, isLaten
     for i, file in enumerate(file_list):
         if i > 100000:
             break
-        print ("DR: ", file)
+        print("DR: ", file)
 
         output_file = output_dir + file.split('/')[-1]
         T = template.Bin2Template_Byte_TF_C(file, isLatent=isLatent)

@@ -10,15 +10,19 @@ import scipy
 import cv2
 
 from skimage.color import rgb2gray
-from skimage import io
+# from skimage import io
+from skimage.morphology import binary_opening, binary_closing
 
 import get_maps
 import preprocessing
 import descriptor
 import template
 import minutiae_AEC_modified as minutiae_AEC
+import enhancement_AEC
+import show
 import descriptor_PQ
 import descriptor_DR
+import loadminutiae
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -27,7 +31,7 @@ class FeatureExtractionRolled:
     """Rolled impressions feature extractor"""
 
     def __init__(self, patch_types=None, des_model_dirs=None,
-                 minu_model_dir=None):
+                 minu_model_dir=None, enhancement_model_dir=None):
 
         # Setting instance params
         self.des_models = None
@@ -35,6 +39,7 @@ class FeatureExtractionRolled:
         self.minu_model = None
         self.minu_model_dir = minu_model_dir
         self.des_model_dirs = des_model_dirs
+        self.enhancement_model_dir = enhancement_model_dir
 
         print("Loading models, this may take some time...")
         if self.minu_model_dir is not None:
@@ -66,6 +71,11 @@ class FeatureExtractionRolled:
                 )
             self.patch_size = 96
 
+        if self.enhancement_model_dir is not None:
+            print("Loading enhancement model: " + self.enhancement_model_dir)
+            emodel = enhancement_AEC.ImportGraph(enhancement_model_dir)
+            self.enhancement_model = emodel
+
     def remove_spurious_minutiae(self, mnt, mask, r=5):
         """Remove minutiae outside and in the borders of a mask"""
         minu_num = len(mnt)
@@ -81,16 +91,17 @@ class FeatureExtractionRolled:
             if x < r or y < r or x > w - r - 1 or y > h - r - 1:
                 flag[i] = 0
             elif(mask[y - r, x - r] == 0 or mask[y - r, x + r] == 0 or
-                mask[y + r, x - r] == 0 or mask[y + r, x + r] == 0):
+                 mask[y + r, x - r] == 0 or mask[y + r, x + r] == 0):
                 flag[i] = 0
-        
+
         # Filtering minutiae
         mnt = mnt[flag > 0, :]
         return mnt
 
-    def feature_extraction_single(self, img_file, output_dir=None, ppi=500):
+    def feature_extraction_single(self, img_file, enhancement=False,
+                                  output_dir=None, ppi=500, edited_mnt=False):
         """Extracting features from a single image"""
-        
+
         # Global param
         block_size = 16
 
@@ -102,7 +113,8 @@ class FeatureExtractionRolled:
             return None
 
         # Loading image
-        img = io.imread(img_file, as_gray=True)
+        # img = io.imread(img_file, as_gray=True)
+        img = cv2.imread(img_file, 0)
 
         # Resizing to 500 ppi
         if ppi != 500:
@@ -110,23 +122,24 @@ class FeatureExtractionRolled:
 
         # Adjusting image size to block_size
         img = preprocessing.adjust_image_size(img, block_size)
-        
+
         # Converting to gray scale if needed (not-required I think)
         if len(img.shape) > 2:
             img = rgb2gray(img)
-        
+
         # current image shape
         h, w = img.shape
 
-        # Intensity quality map
-        start = timeit.default_timer()
-        mask = get_maps.get_quality_map_intensity(img)
-        stop = timeit.default_timer()
-        print('time for cropping : %f' % (stop - start))
+        if not enhancement:
+            # Intensity quality map
+            start = timeit.default_timer()
+            mask = get_maps.get_quality_map_intensity(img)
+            stop = timeit.default_timer()
+            print('time for cropping : %f' % (stop - start))
 
-        # Saving quality map
-        fname = os.path.join(output_dir, "%s_qmi.%s" % img_name)
-        cv2.imwrite(fname, mask * 255)
+            # Saving quality map
+            fname = os.path.join(output_dir, "%s_qmi.%s" % img_name)
+            cv2.imwrite(fname, mask * 255)
 
         # Obtaining texture image
         start = timeit.default_timer()
@@ -139,24 +152,82 @@ class FeatureExtractionRolled:
 
         # Saving texture image
         fname = os.path.join(output_dir, "%s_tex.%s" % img_name)
-        cv2.imwrite(fname, texture_img)
+        cv2.imwrite(fname, texture_img.astype(np.uint8))
 
-        # Extracting minutiae
-        start = timeit.default_timer()
-        mnt = self.minu_model.run_whole_image(texture_img, minu_thr=0.15)
-        stop = timeit.default_timer()
-        print('time for minutiae : %f' % (stop - start))
+        mnt_img = texture_img
+        if enhancement:
+            start = timeit.default_timer()
+            print("Running enhancement autoencoder")
+            stft_texture_img = preprocessing.STFT(texture_img)
 
-        # Filtrating minutiae
-        mnt = self.remove_spurious_minutiae(mnt, mask)
+            # Saving stft image
+            fname = os.path.join(output_dir, "%s_stft.%s" % img_name)
+            cv2.imwrite(fname, stft_texture_img.astype(np.uint8))
 
-        # Saving minutiae
-        fname = os.path.join(output_dir, "%s_mnt.txt" % img_name[0])
-        with open(fname, "w") as mf:
-            mf.write("%d\n" % len(mnt))
-            for m in mnt:
-                m = tuple(m)
-                mf.write("%d %d %f %f\n" % m)
+            aec_img = self.enhancement_model.run_whole_image(stft_texture_img)
+            stop = timeit.default_timer()
+            print('time for enhancement img: %f' % (stop - start))
+
+            # Saving enhanced image
+            fname = os.path.join(output_dir, "%s_aec.%s" % img_name)
+            cv2.imwrite(fname, aec_img.astype(np.uint8))
+
+            # Quality maps
+            maps = get_maps.get_quality_map_dict(
+                aec_img, self.dict_all, self.dict_ori,
+                self.dict_spacing, R=500.0
+            )
+            quality_map_aec, dir_map_aec, fre_map_aec = maps
+
+            # Obtaining mask
+            mask = quality_map_aec > 0.45  # 0.35  # 0.45 in latent images
+            mask = binary_closing(mask, np.ones((3, 3))).astype(np.int)
+            mask = binary_opening(mask, np.ones((3, 3))).astype(np.int)
+            blkmask_ssim = get_maps.SSIM(stft_texture_img, aec_img, thr=0.2)
+            blkmask = blkmask_ssim * mask
+            blk_h, blk_w = blkmask.shape
+            mask = cv2.resize(
+                blkmask.astype(float),
+                (block_size * blk_w, block_size * blk_h),
+                interpolation=cv2.INTER_LINEAR
+            )
+            mask[mask > 0] = 1
+
+            # Saving mask
+            fname = os.path.join(output_dir, "%s_mask.%s" % img_name)
+            cv2.imwrite(fname, mask * 255)
+
+            mnt_img = aec_img
+
+        if not edited_mnt:
+            # Extracting minutiae
+            start = timeit.default_timer()
+            mnt = self.minu_model.run_whole_image(mnt_img, minu_thr=0.15)
+            stop = timeit.default_timer()
+            print('time for minutiae : %f' % (stop - start))
+
+            # Filtrating minutiae
+            mnt = self.remove_spurious_minutiae(mnt, mask)
+
+            # Maximum number of minutiae
+            mnt = mnt[:1000]
+
+            # Saving minutiae
+            fname = os.path.join(output_dir, "%s_mnt.txt" % img_name[0])
+            with open(fname, "w") as mf:
+                mf.write("%d\n" % len(mnt))
+                for m in mnt:
+                    m = tuple(m)
+                    mf.write("%d %d %f %f\n" % m)
+        else:
+            # Load minutiae
+            mnt_filename = "%s.m" % img_file.split('.')[0]
+            mnt = loadminutiae.load_edited_minutiae(mnt_filename)
+
+        # Plotting minutiae
+        fname = os.path.join(output_dir, "%s_mntp.jpg" % img_name[0])
+        show.show_minutiae_sets(mnt_img, [[], mnt], mask=mask,
+                                block=False, fname=fname)
 
         # Minutiae descriptor
         start = timeit.default_timer()
@@ -192,9 +263,10 @@ class FeatureExtractionRolled:
         )
         rolled_template = template.Template()
         rolled_template.add_minu_template(minu_template)
+        print(len(mnt))
 
         # Texture template
-        start = timeit.default_timer()        
+        start = timeit.default_timer()
         stride = 16
         x = np.arange(24, w - 24, stride)
         y = np.arange(24, h - 24, stride)
@@ -214,7 +286,7 @@ class FeatureExtractionRolled:
         virtual_minutiae = np.asarray(virtual_minutiae)
 
         if len(virtual_minutiae) > 1000:
-            virtual_minutiae = virtual_minutiae[:1000]        
+            virtual_minutiae = virtual_minutiae[:1000]
         print("Virtual minutiae %d" % len(virtual_minutiae))
 
         # Saving virtual minutiae
@@ -243,9 +315,9 @@ class FeatureExtractionRolled:
         return rolled_template
 
     def feature_extraction(self, image_dir, img_type='bmp', template_dir=None,
-                           enhancement=False):
+                           enhancement=False, edited_mnt=False):
         """Feature extraction for a batch of images"""
-        
+
         # Loading image names in input directory
         img_files = glob.glob(image_dir + '*.' + img_type)
         assert(len(img_files) > 0)
@@ -264,22 +336,12 @@ class FeatureExtractionRolled:
             if os.path.exists(fname):
                 continue
 
-            if enhancement:
-                # Extracting features with enhancement (Missing function)
-                result = self.feature_extraction_single_enhancement(img_file)
-                rolled_template, enhanced_img = result
-                
-                # SAving enhanced image
-                if template_dir is not None:
-                    enhanced_img = np.asarray(enhanced_img, dtype=np.uint8)
-                    fname = os.path.join(template_dir, img_name + '.jpeg')
-                    io.imsave(fname, enhanced_img)
-            else:
-                # Extracting features without enhancement
-                rolled_template = self.feature_extraction_single(
-                    img_file, output_dir=template_dir
-                )
-            
+            # Extracting features without enhancement
+            rolled_template = self.feature_extraction_single(
+                img_file, output_dir=template_dir, enhancement=enhancement,
+                edited_mnt=edited_mnt
+            )
+
             stop = timeit.default_timer()  # End time
             # Printing total execution time for one image
             print("Total time for extraction: %d" % (stop - start))
@@ -307,25 +369,31 @@ def parse_arguments(argv):
     parser.add_argument(
         '--gpu', help='comma separated list of GPU(s) to use.', default='0'
     )
-    
+
     parser.add_argument(
         '--N1', type=int, default=0,
         help='rolled index from which the enrollment starts'
     )
-    
+
     parser.add_argument(
-        '--N2', type=int, default=2000, 
+        '--N2', type=int, default=2000,
         help='rolled index from which the enrollment starts'
     )
-    
+
     parser.add_argument(
         '--tdir', type=str,
         help='data path for minutiae descriptor and minutiae extraction'
     )
-    
+
     parser.add_argument('--idir', type=str, help='data path for images')
 
     parser.add_argument('--itype', type=str, help='Image type', default="tif")
+
+    parser.add_argument('--enhance', required=False, action='store_true',
+                        help='Apply enhancement')
+
+    parser.add_argument('--edited_mnt', required=False, action='store_true',
+                        help='Use edited minutiae')
 
     # Parsing arguments
     return parser.parse_args(argv)
@@ -336,7 +404,7 @@ if __name__ == '__main__':
 
     # Parsing arguments
     args = parse_arguments(sys.argv[1:])
-    
+
     # Configuring CUDA for GPUs
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -363,27 +431,33 @@ if __name__ == '__main__':
     img_dir = args.idir if args.idir else config['GalleryImageDirectory']
     temp_dir = args.tdir if args.tdir else config['GalleryTemplateDirectory']
 
+    # enhancement model
+    enhance_model_dir = config['EnhancementModel'] if args.enhance else None
+
     # Instantiating the feature extractor
     lf_rolled = FeatureExtractionRolled(
         patch_types=patch_types,
         des_model_dirs=des_model_dirs,
-        minu_model_dir=minu_model_dir
+        minu_model_dir=minu_model_dir,
+        enhancement_model_dir=enhance_model_dir,
     )
 
     # Feature extraction
     print("Starting feature extraction (batch)...")
     lf_rolled.feature_extraction(
-        image_dir=img_dir, template_dir=temp_dir, enhancement=False,
-        img_type=args.itype
+        image_dir=img_dir, template_dir=temp_dir, enhancement=args.enhance,
+        img_type=args.itype, edited_mnt=args.edited_mnt
     )
-    
-    """  # Blocking this piece of code because it is buggy
-    print("Finished feature extraction. Starting dimensionality reduction...")
-    descriptor_DR.template_compression(input_dir=template_dir, output_dir=template_dir,
-                                       model_path=config['DimensionalityReductionModel'],
-                                       isLatent=False, config=None)
 
-    print("Finished dimensionality reduction. Starting product quantization...")
-    descriptor_PQ.encode_PQ(input_dir=template_dir, output_dir=template_dir, fprint_type='rolled')
+    # Blocking this piece of code because it is buggy
+    print("Finished feature extraction. Starting dimensionality reduction...")
+    descriptor_DR.template_compression(
+        input_dir=temp_dir, output_dir=temp_dir,
+        model_path=config['DimensionalityReductionModel'],
+        isLatent=False, config=None
+    )
+
+    print("Finished dimensionality reduction. Starting product quantization..")
+    descriptor_PQ.encode_PQ(
+        input_dir=temp_dir, output_dir=temp_dir, fprint_type='rolled')
     print("Finished product quantization. Exiting...")
-    """

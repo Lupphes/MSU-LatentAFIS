@@ -666,6 +666,7 @@ def Template2Bin_Byte_TF_C(fname, template, isLatent=True, save_mask=False):
 
             tmp = (des_len,)
             file.write(struct.pack('H', *tmp))
+            print(minu_num)
             descriptor = np.reshape(des, (des_len * minu_num,))
             descriptor_tuple = tuple(np.float32(descriptor))
             file.write(struct.pack('f' * des_len * minu_num, *(descriptor_tuple)))

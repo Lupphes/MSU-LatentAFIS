@@ -5,3 +5,7 @@ Papers/
 *.pyc
 
 notes.txt
+
+*.o
+
+match

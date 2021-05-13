@@ -1,6 +1,6 @@
 CXX=g++
 # CFLAGS will be the options passed to the compiler.
-INCLUDE=-I./eigen/ -I./boost/
+INCLUDE=-I/usr/include/eigen3 -I./boost/
 CXXFLAGS=-c -O3 -fopenmp -std=gnu++11 $(INCLUDE)
 
 all: match
