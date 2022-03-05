@@ -1,7 +1,7 @@
 import os
 import torch
 import torch.utils.data as data
-import datasets.loaders as loaders
+from . import loaders as loaders
 import numpy as np
 
 IMG_EXTENTIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP']

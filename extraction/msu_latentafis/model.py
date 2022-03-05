@@ -1,9 +1,9 @@
 # model.py
 
 import math
-import models
-import losses
-import evaluate
+from . import models as models
+from . import losses as losses
+from . import evaluate as evaluate
 from torch import nn
 import pdb
 

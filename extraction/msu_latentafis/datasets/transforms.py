@@ -11,8 +11,8 @@ import numpy as np
 import scipy as sp
 import torchvision
 from PIL import Image, ImageOps
-from datasets import loaders
-import utils
+from . import loaders as loaders
+from .. import utils as utils
 
 
 class Compose(object):

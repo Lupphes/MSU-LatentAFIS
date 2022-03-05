@@ -1,4 +1,4 @@
-import template
+from . import template
 import numpy as np
 import math
 import cv2
@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 import os
-import load
+from . import load
 
 
 class ImportGraph():

@@ -2,7 +2,7 @@
 
 import os
 import torch
-import datasets
+from . import datasets as datasets
 import torch.utils.data
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import SubsetRandomSampler

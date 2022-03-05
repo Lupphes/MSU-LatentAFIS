@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import math
 import numpy as np
-import preprocessing as LP
+from . import preprocessing as LP
 from scipy.ndimage import rotate
 matplotlib.interactive(False)
 

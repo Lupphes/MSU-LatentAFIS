@@ -2,9 +2,9 @@
 
 import os
 import math
-import utils as utils
+from .. import utils as utils
 import torch.utils.data as data
-import datasets.loaders as loaders
+from . import loaders as loaders
 
 import torch
 

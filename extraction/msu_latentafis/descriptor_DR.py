@@ -3,10 +3,10 @@ import sys
 import torch
 from torch.autograd import Variable
 import random
-import models
-import datasets
+from . import models as models
+from . import datasets as datasets
 import numpy as np
-import template_2 as template
+from . import template_2 as template
 import argparse
 import json
 
@@ -113,7 +113,7 @@ def extract_features(model, dataloader, cuda):
 def template_compression(input_dir='', output_dir=None, model_path=None, isLatent=False, config=None):
     if not config and not (input_dir and model_path):
         dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        with open(dir_path + 'config') as config_file:
+        with open(dir_path + '/../afis.config') as config_file:
             config = json.load(config_file)
     if not output_dir:
         output_dir = input_dir
@@ -185,7 +185,7 @@ def template_compression_single(input_file='', output_dir=None, model_path=None,
         return
     if not config and not model_path:
         dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        with open(dir_path + 'config') as config_file:
+        with open(dir_path + '/../afis.config') as config_file:
             config = json.load(config_file)
     if not output_dir:
         output_dir = os.path.dirname(input_file)
@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
     args = parse_arguments(sys.argv[1:])
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    with open(dir_path + '/afis.config') as config_file:
+    with open(dir_path + '/../afis.config') as config_file:
         config = json.load(config_file)
 
     if args.fprint_type and args.input_dir:

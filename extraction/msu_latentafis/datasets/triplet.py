@@ -1,11 +1,11 @@
 # triplet.py
 
 import os
-import utils as utils
+from .. import utils as utils
 
 import torch
 import torch.utils.data as data
-import datasets.loaders as loaders
+from . import loaders as loaders
 
 
 def make_dataset(ifile):

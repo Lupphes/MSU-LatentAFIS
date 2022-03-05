@@ -10,7 +10,7 @@ from skimage.morphology import reconstruction
 import math
 import cv2
 import sklearn.linear_model
-import get_maps
+from . import get_maps
 
 
 def nextpow2(x):

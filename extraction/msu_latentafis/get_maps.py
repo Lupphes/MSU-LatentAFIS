@@ -1,11 +1,11 @@
 import numpy as np
-import preprocessing
+from . import preprocessing
 import matplotlib.pylab as plt
 import math
 import glob
 import scipy.ndimage
 from skimage.filters import gaussian, gabor_kernel
-import show
+from . import show
 import cv2
 from skimage.morphology import binary_opening, binary_closing
 

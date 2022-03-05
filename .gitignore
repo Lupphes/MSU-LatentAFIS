@@ -1,4 +1,3 @@
-models/
 msuenv/
 Papers/
 
@@ -14,3 +13,9 @@ notes.txt
 *.o
 
 match
+
+__pycache__/
+
+models/
+!extraction/msu_latentafis/models/
+

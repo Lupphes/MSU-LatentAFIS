@@ -4,10 +4,10 @@ import os
 import math
 import pickle
 import os.path
-import utils as utils
+from .. import utils as utils
 import torch.utils.data as data
 from sklearn.utils import shuffle
-import datasets.loaders as loaders
+from . import loaders as loaders
 
 IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP']
 

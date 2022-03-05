@@ -13,11 +13,11 @@ import argparse
 import scipy
 import cv2
 
-import get_maps
-import preprocessing
+from . import get_maps
+from . import preprocessing
 import os
-import show
-import minutiae_AEC_modified as minutiae_AEC
+from . import show
+from . import minutiae_AEC_modified as minutiae_AEC
 
 
 

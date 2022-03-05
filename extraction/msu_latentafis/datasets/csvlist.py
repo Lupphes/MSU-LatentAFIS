@@ -6,7 +6,7 @@ import math
 import torch
 from random import shuffle
 import torch.utils.data as data
-import datasets.loaders as loaders
+from . import loaders as loaders
 import numpy as np
 
 class CSVListLoader(data.Dataset):

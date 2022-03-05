@@ -22,22 +22,22 @@ from skimage.morphology import (
 )
 from scipy.ndimage import label, generate_binary_structure
 
-import get_maps
-import preprocessing
-import filtering
-import descriptor
-import template
-import minutiae_AEC
+from . import get_maps
+from . import preprocessing
+from . import filtering
+from . import descriptor
+from . import template
+from . import minutiae_AEC
 # import minutiae_AEC_modified as minutiae_AEC
-import show
-import enhancement_AEC
+from . import show
+from . import enhancement_AEC
 # import enhancement_AEC_npy as enhancement_AEC
-import loggabor
+from . import loggabor
 
-import descriptor_PQ
-import descriptor_DR
+from . import descriptor_PQ
+from . import descriptor_DR
 
-import loadminutiae
+from . import loadminutiae
 
 # Setting environment vars for tensorflow
 os.environ['KERAS_BACKEND'] = 'tensorflow'
@@ -671,7 +671,7 @@ def get_feature_extractor():
     global config
     if not config:
         dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        with open(dir_path + 'config') as config_file:
+        with open(dir_path + '/../afis.config') as config_file:
             config = json.load(config_file)
 
     des_model_dirs = []

@@ -13,16 +13,16 @@ from skimage.color import rgb2gray
 # from skimage import io
 from skimage.morphology import binary_opening, binary_closing
 
-import get_maps
-import preprocessing
-import descriptor
-import template
-import minutiae_AEC_modified as minutiae_AEC
-import enhancement_AEC
-import show
-import descriptor_PQ
-import descriptor_DR
-import loadminutiae
+from . import get_maps
+from . import preprocessing
+from . import descriptor
+from . import template
+from . import minutiae_AEC_modified as minutiae_AEC
+from . import enhancement_AEC
+from . import show
+from . import descriptor_PQ
+from . import descriptor_DR
+from . import loadminutiae
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
