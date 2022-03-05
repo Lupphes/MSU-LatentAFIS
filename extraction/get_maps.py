@@ -11,13 +11,18 @@ from skimage.morphology import binary_opening, binary_closing
 
 
 class local_STFT:
+    """Local STFT analysis"""
+
     def __init__(self, patch, weight=None, dBPass=None):
+
+        # Normalizing patch
         if weight is not None:
             patch = patch * weight
         patch = patch - np.mean(patch)
         norm = np.linalg.norm(patch)
         patch = patch / (norm + 0.000001)
 
+        # Filtering the fourier spectrum
         f = np.fft.fft2(patch)
         fshift = np.fft.fftshift(f)
         if dBPass is not None:
@@ -31,14 +36,19 @@ class local_STFT:
         self.patch_size = patch.shape[0]
 
     def analysis(self, r, dir_ind_list=None, N=2):
+        # directions
         assert(dir_ind_list is not None)
+
+        # Patch energy
         energy = np.abs(self.patch_FFT)
         energy = energy / (np.sum(energy) + 0.00001)
-        nrof_dirs = len(dir_ind_list)
 
+        # Directions
+        nrof_dirs = len(dir_ind_list)
         ori_interval = math.pi / nrof_dirs
         ori_interval2 = ori_interval / 2
 
+        # Estimating energy in each direction
         pad_size = 1
         dir_norm = np.zeros((nrof_dirs + 2,))
         for i in range(nrof_dirs):
@@ -51,29 +61,38 @@ class local_STFT:
         # smooth dir_norm
         smoothed_dir_norm = dir_norm
         for i in range(1, nrof_dirs + 1):
-            smoothed_dir_norm[i] = (dir_norm[i - 1] + dir_norm[i] * 4 + dir_norm[i + 1]) / 6
+            smoothed_dir_norm[i] = dir_norm[i - 1] + dir_norm[i + 1]
+            smoothed_dir_norm[i] += 4 * dir_norm[i] / 6
 
         smoothed_dir_norm[0] = smoothed_dir_norm[nrof_dirs]
         smoothed_dir_norm[nrof_dirs + 1] = smoothed_dir_norm[1]
 
-        den = np.sum(smoothed_dir_norm[1:nrof_dirs + 1]) + 0.00001  # verify if den == 1
-        smoothed_dir_norm = smoothed_dir_norm / den  # normalization if den == 1, this line can be removed
+        # verify if den == 1
+        den = np.sum(smoothed_dir_norm[1:nrof_dirs + 1]) + 0.00001
+
+        # normalization if den == 1, this line can be removed
+        smoothed_dir_norm = smoothed_dir_norm / den
 
         ori = []
         fre = []
         confidence = []
 
+        # Dominant directions
         wenergy = energy * r
         for i in range(1, nrof_dirs + 1):
-            if smoothed_dir_norm[i] > smoothed_dir_norm[i - 1] and smoothed_dir_norm[i] > smoothed_dir_norm[i + 1]:
-                tmp_ori = (i - pad_size) * ori_interval + ori_interval2 + math.pi / 2
+            if(smoothed_dir_norm[i] > smoothed_dir_norm[i - 1] and
+               smoothed_dir_norm[i] > smoothed_dir_norm[i + 1]):
+                tmp_ori = (i - pad_size) * ori_interval
+                tmp_ori += ori_interval2 + math.pi / 2
                 ori.append(tmp_ori)
                 confidence.append(smoothed_dir_norm[i])
                 tmp_fre = np.sum(wenergy[dir_ind_list[i - pad_size][:, 0],
-                                 dir_ind_list[i - pad_size][:, 1]]) / dir_norm[i]
+                                         dir_ind_list[i - pad_size][:, 1]])
+                tmp_fre /= dir_norm[i]
                 tmp_fre = 1 / (tmp_fre + 0.00001)
                 fre.append(tmp_fre)
 
+        # Returning candidates
         if len(confidence) > 0:
             confidence = np.asarray(confidence)
             fre = np.asarray(fre)
@@ -106,7 +125,8 @@ class local_STFT:
         candi_num = np.min([candi_num, N])
         patch_size = self.patch_FFT.shape
         for i in range(candi_num):
-            kernel = gabor_kernel(self.fre[i], theta=self.ori[i], sigma_x=10, sigma_y=10)
+            kernel = gabor_kernel(self.fre[i], theta=self.ori[i],
+                                  sigma_x=10, sigma_y=10)
             kernel_f = np.fft.fft2(kernel.real, patch_size)
             kernel_f = np.fft.fftshift(kernel_f)
             patch_f = self.patch_FFT * kernel_f
@@ -171,15 +191,22 @@ def get_dir_map_gradient(img, mask=None, block_size=16, sigma=5):
     if block_size > 1:
         for i in range(blkH):
             for j in range(blkW):
-                if mask[i * block_size + block_size // 2, j * block_size + block_size // 2] == 0:
+                if mask[i * block_size + block_size // 2,
+                        j * block_size + block_size // 2] == 0:
                     continue
-                blk_Gxx = np.sum(Gxx[i * block_size:(i+1) * block_size, j * block_size:(j+1) * block_size])
-                blk_Gxy = np.sum(Gxy[i * block_size:(i+1) * block_size, j * block_size:(j+1) * block_size])
-                blk_Gyy = np.sum(Gyy[i * block_size:(i+1) * block_size, j * block_size:(j+1) * block_size])
-                dir_map[i, j] = 0.5 * np.arctan2(2 * blk_Gxy, blk_Gxx - blk_Gyy) + math.pi / 2
+                blk_Gxx = np.sum(Gxx[i * block_size:(i + 1) * block_size,
+                                     j * block_size:(j + 1) * block_size])
+                blk_Gxy = np.sum(Gxy[i * block_size:(i + 1) * block_size,
+                                     j * block_size:(j + 1) * block_size])
+                blk_Gyy = np.sum(Gyy[i * block_size:(i + 1) * block_size,
+                                     j * block_size:(j + 1) * block_size])
+                angle = np.arctan2(2 * blk_Gxy, blk_Gxx - blk_Gyy)
+                dir_map[i, j] = 0.5 * angle + math.pi / 2
     else:
         dir_map = 0.5 * np.arctan2(2 * Gxy, Gxx - Gyy) + math.pi / 2
-        quality_map = np.sqrt( (Gxx - Gyy) * (Gxx - Gyy) + 4*Gxy*Gxy) / (Gxx + Gyy + 500)
+        quality_map = np.sqrt((Gxx - Gyy) * (Gxx - Gyy) + 4 * Gxy * Gxy)
+        quality_map /= (Gxx + Gyy + 500)
+
     return dir_map, quality_map
 
 
@@ -264,13 +291,14 @@ def construct_dictionary(ori_num=30):
     dict_all = []
     spacing_all = []
     ori_all = []
-    Y, X = np.meshgrid(range(-patch_size2, patch_size2), range(-patch_size2, patch_size2))
+    Y, X = np.meshgrid(range(-patch_size2, patch_size2),
+                       range(-patch_size2, patch_size2))
 
     for spacing in range(4, 13):
         for valley_spacing in range(max(2, spacing // 2 - 2), spacing // 2):
             ridge_spacing = spacing - valley_spacing
             for k in range(ori_num):
-                theta = np.pi/2 - k*np.pi/ori_num
+                theta = np.pi / 2 - k * np.pi / ori_num
                 X_r = X * np.cos(theta) - Y * np.sin(theta)
                 for offset in range(0, spacing - 1, 2):
                     X_r_offset = X_r + offset + ridge_spacing / 2
@@ -279,7 +307,7 @@ def construct_dictionary(ori_num=30):
                     Y2 = np.zeros((patch_size, patch_size))
                     Y1[X_r_offset <= ridge_spacing] = X_r_offset[X_r_offset <= ridge_spacing]
                     Y2[X_r_offset > ridge_spacing] = X_r_offset[X_r_offset > ridge_spacing] - ridge_spacing
-                    element = -np.sin(2*math.pi*(Y1 / ridge_spacing / 2)) + np.sin(2*math.pi*(Y2 / valley_spacing / 2))
+                    element = -np.sin(2 * math.pi * (Y1 / ridge_spacing / 2)) + np.sin(2 * math.pi * (Y2 / valley_spacing / 2))
                     element = element.reshape(patch_size * patch_size,)
                     element = element - np.mean(element)
                     element = element / np.linalg.norm(element)
@@ -311,13 +339,14 @@ def construct_dictionary_rolled(ori_num=30):
     dict_all = []
     spacing_all = []
     ori_all = []
-    Y, X = np.meshgrid(range(-patch_size2, patch_size2), range(-patch_size2, patch_size2))
+    Y, X = np.meshgrid(range(-patch_size2, patch_size2),
+                       range(-patch_size2, patch_size2))
 
     for spacing in range(6, 13):
-        for valley_spacing in range(3, spacing//2):
+        for valley_spacing in range(3, spacing // 2):
             ridge_spacing = spacing - valley_spacing
             for k in range(ori_num):
-                theta = np.pi/2 - k*np.pi/ori_num
+                theta = np.pi / 2 - k * np.pi / ori_num
                 X_r = X * np.cos(theta) - Y * np.sin(theta)
                 for offset in range(0, spacing - 1, 2):
                     X_r_offset = X_r + offset + ridge_spacing / 2
@@ -326,7 +355,7 @@ def construct_dictionary_rolled(ori_num=30):
                     Y2 = np.zeros((patch_size, patch_size))
                     Y1[X_r_offset <= ridge_spacing] = X_r_offset[X_r_offset <= ridge_spacing]
                     Y2[X_r_offset > ridge_spacing] = X_r_offset[X_r_offset > ridge_spacing] - ridge_spacing
-                    element = -np.sin(2*math.pi*(Y1 / ridge_spacing / 2)) + np.sin(2*math.pi*(Y2 / valley_spacing / 2))
+                    element = -np.sin(2 * math.pi * (Y1 / ridge_spacing / 2)) + np.sin(2 * math.pi * (Y2 / valley_spacing / 2))
                     element = element.reshape(patch_size * patch_size,)
                     element = element - np.mean(element)
                     element = element / np.linalg.norm(element)
@@ -387,7 +416,8 @@ def get_quality_map_ori_dict(img, dict, spacing, dir_map=None, block_size=16):
     for i in range(0, blkH):
         for j in range(0, blkW):
             ind = dir_ind[i, j]
-            patch = img[i * block_size:i * block_size + patch_size, j * block_size:j * block_size + patch_size]
+            patch = img[i * block_size:i * block_size + patch_size,
+                        j * block_size:j * block_size + patch_size]
 
             patch = patch.reshape(patch_size * patch_size,)
             patch = patch - np.mean(patch)
@@ -426,10 +456,12 @@ def SSIM(img, temp_img, block_size=16, thr=0.65):
         return weight
 
     weight = get_weights(blocks_in_patch, blocks_in_patch, 1, sigma=None)
-    weight_pixel = get_weights(patch_size, patch_size, 1, sigma=(patch_size / 2)**2)
+    sigma = (patch_size / 2) ** 2
+    weight_pixel = get_weights(patch_size, patch_size, 1, sigma=sigma)
     for i in range(blkH - blocks_in_patch + 1):
         for j in range(blkW - blocks_in_patch + 1):
-            patch = img[i * block_size:i * block_size + patch_size, j * block_size:j * block_size + patch_size]
+            patch = img[i * block_size:i * block_size + patch_size,
+                        j * block_size:j * block_size + patch_size]
 
             patch = patch - np.median(patch)
             patch = patch / (np.linalg.norm(patch) + R)
@@ -442,8 +474,8 @@ def SSIM(img, temp_img, block_size=16, thr=0.65):
             temp_patch = temp_patch * weight_pixel[:, :, 0]
             temp_patch = temp_patch.reshape(patch_size * patch_size, )
 
-            simi = (np.dot(patch, temp_patch))
-            quality[i:i + blocks_in_patch, j:j + blocks_in_patch] += simi * weight[:, :, 0]
+            simi = (np.dot(patch, temp_patch)) * weight[:, :, 0]
+            quality[i:i + blocks_in_patch, j:j + blocks_in_patch] += simi
 
     quality = cv2.GaussianBlur(quality, (5, 5), 0)
     blkmask = quality > thr
@@ -453,7 +485,8 @@ def SSIM(img, temp_img, block_size=16, thr=0.65):
     return blkmask
 
 
-def get_quality_map_dict(img, dict, ori, spacing, block_size=16, process=False, R=500.0, t=0.05):
+def get_quality_map_dict(img, dict, ori, spacing, block_size=16,
+                         process=False, R=500.0, t=0.05):
     if img.dtype == 'uint8':
         img = img.astype(np.float)
     if process:
@@ -478,13 +511,21 @@ def get_quality_map_dict(img, dict, ori, spacing, block_size=16, process=False, 
     for i in range(r, blkH - r):
         for j in range(r, blkW - r):
             pixel_list.append((i, j))
-            patch = img[i * block_size:i * block_size + patch_size, j * block_size:j * block_size + patch_size].copy()
+            patch = img[i * block_size:i * block_size + patch_size,
+                        j * block_size:j * block_size + patch_size].copy()
 
             patch = patch.reshape(patch_size * patch_size,)
             patch = patch - np.mean(patch)
             patch = patch / (np.linalg.norm(patch) + R)
+
             patch[patch > t] = 0.0
             patch[patch < -t] = -0.0
+            # The above lines are a bug according to
+            # https://github.com/prip-lab/MSU-LatentAFIS/issues/4
+            # The lines below should fix this issue
+            # patch[patch > t] = t
+            # patch[patch < -t] = -t
+
             patches.append(patch)
 
     patches = np.asarray(patches)
@@ -515,7 +556,8 @@ def get_quality_map_dict(img, dict, ori, spacing, block_size=16, process=False, 
     return quality_map, dir_map, fre_map
 
 
-def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16, process=False, R=500.0, t=0.5):
+def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16,
+                                process=False, R=500.0, t=0.02):  # t=0.5
     if img.dtype == 'uint8':
         img = img.astype(np.float)
     if process:
@@ -536,7 +578,8 @@ def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16, process=
     pixel_list = []
 
     r = 1
-    x, y = np.meshgrid(range(-patch_size / 2, patch_size / 2), range(-patch_size / 2, patch_size / 2))
+    x, y = np.meshgrid(range(-patch_size // 2, patch_size // 2),
+                       range(-patch_size // 2, patch_size // 2))
     x = x.astype(np.float32)
     y = y.astype(np.float32)
     weight = np.exp(-(x * x + y * y) / (patch_size * patch_size / 3.0))
@@ -544,11 +587,18 @@ def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16, process=
     for i in range(r, blkH - r):
         for j in range(r, blkW - r):
             pixel_list.append((i, j))
-            patch = img[i*block_size:i*block_size + patch_size, j*block_size:j*block_size + patch_size].copy()
+            patch = img[i * block_size: i * block_size + patch_size,
+                        j * block_size:j * block_size + patch_size].copy()
             patch = patch - np.median(patch)
             patch = patch / (np.linalg.norm(patch) + R)
-            patch[patch > t] = 0.0
-            patch[patch < -t] = 0.
+
+            # patch[patch > t] = 0.0
+            # patch[patch < -t] = -0.0
+            # The above lines are a bug according to
+            # https://github.com/prip-lab/MSU-LatentAFIS/issues/4
+            # The lines below should fix this issue
+            patch[patch > t] = t
+            patch[patch < -t] = -t
 
             patch = patch * weight
             patch = patch.reshape(patch_size * patch_size,)
@@ -564,8 +614,11 @@ def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16, process=
     for i in range(r, blkH - r):
         for j in range(r, blkW - r):
             quality_map[i, j] = simi[n, similar_ind[n]]
-            dir_map[i, j] = -math.atan2(ori[32 + 64, similar_ind[n]], ori[32, similar_ind[n]]) / 2.0
-            fre_map[i, j] = spacing[32, similar_ind[n]]
+            # dir_map[i, j] = -math.atan2(ori[32 + 64, similar_ind[n]],
+            #                             ori[32, similar_ind[n]]) / 2.0
+            # fre_map[i, j] = spacing[32, similar_ind[n]]
+            dir_map[i, j] = ori[similar_ind[n]]
+            fre_map[i, j] = spacing[similar_ind[n]]
             n += 1
 
     for i in range(r):
@@ -599,10 +652,11 @@ def get_maps_STFT(img, patch_size=64, block_size=16, preprocess=False):
     blkW = (w - patch_size) // block_size + 1
     local_info = np.empty((blkH, blkW), dtype=object)
 
-    x, y = np.meshgrid(range(-patch_size / 2, patch_size / 2), range(-patch_size / 2, patch_size / 2))
+    x, y = np.meshgrid(range(-patch_size // 2, patch_size // 2),
+                       range(-patch_size // 2, patch_size // 2))
     x = x.astype(np.float32)
     y = y.astype(np.float32)
-    r = np.sqrt(x*x + y*y) + 0.0001
+    r = np.sqrt(x * x + y * y) + 0.0001
 
     # if preprocess:
     # -------------------------
@@ -612,8 +666,8 @@ def get_maps_STFT(img, patch_size=64, block_size=16, preprocess=False):
     RMAX = 18  # maximum allowable ridge spacing
     FLOW = patch_size / RMAX
     FHIGH = patch_size / RMIN
-    dRLow = 1. / (1 + (r / FHIGH) ** 4)  # low pass     butterworth     filter
-    dRHigh = 1. / (1 + (FLOW / r) ** 4)  # high    pass     butterworth     filter
+    dRLow = 1. / (1 + (r / FHIGH) ** 4)  # low pass butterworth filter
+    dRHigh = 1. / (1 + (FLOW / r) ** 4)  # high pass butterworth filter
     dBPass = dRLow * dRHigh  # bandpass
 
     dir = np.arctan2(y, x)
@@ -628,11 +682,12 @@ def get_maps_STFT(img, patch_size=64, block_size=16, preprocess=False):
         dir_ind_list.append(tmp)
 
     sigma = patch_size / 3
-    weight = np.exp(-(x*x + y*y) / (sigma*sigma))
+    weight = np.exp(-(x * x + y * y) / (sigma * sigma))
 
     for i in range(0, blkH):
         for j in range(0, blkW):
-            patch = img[i * block_size:i * block_size + patch_size, j * block_size:j * block_size + patch_size].copy()
+            patch = img[i * block_size:i * block_size + patch_size,
+                        j * block_size:j * block_size + patch_size].copy()
             local_info[i, j] = local_STFT(patch, weight, dBPass)
             local_info[i, j].analysis(r, dir_ind_list)
 
@@ -646,9 +701,11 @@ def get_maps_STFT(img, patch_size=64, block_size=16, preprocess=False):
 def STFT_main(img, patch_size=64, block_size=16):
     assert len(img.shape) == 2
 
-    rec_img, dir_map = STFT_enhancement(img, patch_size=64, block_size=16, preprocessing=True)
+    rec_img, dir_map = STFT_enhancement(img, patch_size=64, block_size=16,
+                                        preprocessing=True)
 
-    rec_img2, dir_map = STFT_enhancement(rec_img, patch_size=64, block_size=16, preprocessing=False)
+    rec_img2, dir_map = STFT_enhancement(rec_img, patch_size=64, block_size=16,
+                                         preprocessing=False)
 
     return rec_img2, dir_map
 

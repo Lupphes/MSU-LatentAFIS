@@ -3,7 +3,10 @@ import numpy as np
 import math
 import cv2
 import matplotlib.pyplot as plt
+
+# import tensorflow as tf   # changed
 import tensorflow as tf
+
 import os
 import load
 
@@ -16,17 +19,17 @@ class ImportGraph():
     def __init__(self, model_dir, input_name="batch_join:0", output_name="Add:0"):
         # create local graph and use it in the session
         self.graph = tf.Graph()
-        self.sess = tf.Session(graph=self.graph)
+        self.sess = tf.compat.v1.Session(graph=self.graph)
         with self.graph.as_default():
             # load minutiae model
             meta_file, ckpt_file = load.get_model_filenames(os.path.expanduser(model_dir))
             model_dir_exp = os.path.expanduser(model_dir)
-            saver = tf.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
+            saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
             saver.restore(self.sess, os.path.join(model_dir_exp, ckpt_file))
 
-            self.images_placeholder = tf.get_default_graph().get_tensor_by_name(input_name)
-            self.phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
-            self.embeddings = tf.get_default_graph().get_tensor_by_name(output_name)
+            self.images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(input_name)
+            self.phase_train_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name("phase_train:0")
+            self.embeddings = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
             self.embedding_size = self.embeddings.get_shape()[1]
 
     def run(self, imgs):
@@ -36,47 +39,47 @@ class ImportGraph():
 
 def get_patch_location(patch_type=1):
     if patch_type == 1:
-        x = np.array(xrange(40, 120))
-        y = list(xrange(40, 120))
+        x = np.array(range(40, 120))
+        y = list(range(40, 120))
     elif patch_type == 2:
-        x = np.array(xrange(32, 128))
-        y = np.array(xrange(32, 128))
+        x = np.array(range(32, 128))
+        y = np.array(range(32, 128))
     elif patch_type == 3:
-        x = np.array(xrange(24, 136))
-        y = np.array(xrange(24, 136))
+        x = np.array(range(24, 136))
+        y = np.array(range(24, 136))
     elif patch_type == 4:
-        x = np.array(xrange(16, 144))
-        y = np.array(xrange(16, 144))
+        x = np.array(range(16, 144))
+        y = np.array(range(16, 144))
     elif patch_type == 5:
-        x = np.array(xrange(8, 152))
-        y = np.array(xrange(8, 152))
+        x = np.array(range(8, 152))
+        y = np.array(range(8, 152))
     elif patch_type == 6:
-        x = np.array(xrange(0, 160))
-        y = np.array(xrange(0, 160))
+        x = np.array(range(0, 160))
+        y = np.array(range(0, 160))
     elif patch_type == 7:
-        x = np.array(xrange(0, 96))
-        y = np.array(xrange(0, 96))
+        x = np.array(range(0, 96))
+        y = np.array(range(0, 96))
     elif patch_type == 8:
-        x = np.array(xrange(32, 128))
-        y = np.array(xrange(0, 96))
+        x = np.array(range(32, 128))
+        y = np.array(range(0, 96))
     elif patch_type == 9:
-        x = np.array(xrange(64, 160))
-        y = np.array(xrange(0, 96))
+        x = np.array(range(64, 160))
+        y = np.array(range(0, 96))
     elif patch_type == 10:
-        x = np.array(xrange(64, 160))
-        y = np.array(xrange(32, 128))
+        x = np.array(range(64, 160))
+        y = np.array(range(32, 128))
     elif patch_type == 11:
-        x = np.array(xrange(64, 160))
-        y = np.array(xrange(64, 160))
+        x = np.array(range(64, 160))
+        y = np.array(range(64, 160))
     elif patch_type == 12:
-        x = np.array(xrange(32, 128))
-        y = np.array(xrange(64, 160))
+        x = np.array(range(32, 128))
+        y = np.array(range(64, 160))
     elif patch_type == 13:
-        x = np.array(xrange(1, 96))
-        y = np.array(xrange(64, 160))
+        x = np.array(range(1, 96))
+        y = np.array(range(64, 160))
     elif patch_type == 14:
-        x = np.array(xrange(1, 96))
-        y = np.array(xrange(32, 128))
+        x = np.array(range(1, 96))
+        y = np.array(range(32, 128))
 
     xv, yv = np.meshgrid(x, y)
     return yv, xv
@@ -87,9 +90,9 @@ def get_patch_index(patchSize_L, patchSize_H, oriNum, isMinu=1):
         PI2 = 2 * math.pi
     else:
         PI2 = math.pi
-    x = list(xrange(-patchSize_L / 2 + 1, patchSize_L / 2 + 1))
+    x = list(range(-patchSize_L // 2 + 1, patchSize_L // 2 + 1))
     x = np.array(x)
-    y = list(xrange(-patchSize_H / 2 + 1, patchSize_H / 2 + 1))
+    y = list(range(-patchSize_H // 2 + 1, patchSize_H // 2 + 1))
     y = np.array(y)
     xv, yv = np.meshgrid(x, y)
     patchIndexV = {}
@@ -131,7 +134,7 @@ def extract_patches(minutiae, img, patchIndexV, patch_type=1, patch_size=96):
     ly, lx = get_patch_location(patch_type=patch_type)
     h, w, c = img.shape
     patches = np.zeros((num_minu, patch_size, patch_size, c), dtype=np.float32)
-    for i in xrange(num_minu):
+    for i in range(num_minu):
         x = minutiae[i, 0]
         y = minutiae[i, 1]
         ori = -minutiae[i, 2]
@@ -197,7 +200,7 @@ if __name__ == '__main__':
     img = cv2.imread(imgfile)
     h, w, c = img.shape
 
-    print img
+    print(img)
 
     num_minu = len(template.minu_template[0].minutiae)
     patches = extract_patches(template.minu_template[0].minutiae, img, patchIndexV, patch_type=1)

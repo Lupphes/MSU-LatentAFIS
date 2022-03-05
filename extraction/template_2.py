@@ -2,7 +2,7 @@ import struct
 import numpy as np
 from numpy import linalg as LA
 from io import BytesIO
-from cStringIO import StringIO
+from io import StringIO
 
 
 class MinuTemplate():

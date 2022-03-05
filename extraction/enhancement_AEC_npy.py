@@ -21,7 +21,7 @@ import glob, os
 import cv2
 from tensorpack import (Trainer, QueueInput,
                         ModelDescBase, DataFlow, StagingInputWrapper,
-                        MultiGPUTrainerBase,
+                        # MultiGPUTrainerBase,
                         TowerContext)
 from tensorpack.tfutils.summary import add_moving_summary
 from tensorpack.tfutils.symbolic_functions import *
@@ -140,7 +140,7 @@ def upsample(net, nf=32, upsample_factor=2):
         downsampled_logits_shape[2] * upsample_factor,
         downsampled_logits_shape[3]
     ]
-    print upsampled_logits_shape
+    # print(upsampled_logits_shape)
     # Perform the upsampling
     net = tf.nn.conv2d_transpose(net, upsample_filter_tensor,
                                  output_shape=upsampled_logits_shape, strides=[1, upsample_factor, upsample_factor, 1])
@@ -542,7 +542,7 @@ def enhancement2(model_path,sample_path, imgs, output_name='reconstruction/gen:0
                     for i in range(0,h-opt.SHAPE+1,opt.SHAPE//2):
 
                         for j in range(0, w-opt.SHAPE+1, opt.SHAPE // 2):
-                            print j
+                            # print j
                             patch = img[i:i+opt.SHAPE,j:j+opt.SHAPE,np.newaxis]
                             x.append(j)
                             y.append(i)
@@ -559,7 +559,7 @@ def enhancement2(model_path,sample_path, imgs, output_name='reconstruction/gen:0
                     maxV = np.max(minutiae_cylinder)
                     minutiae_cylinder = (minutiae_cylinder-minV)/(maxV-minV)*255
                     cv2.imwrite( (sample_path+'test_%03d.jpeg'%(k+1)), minutiae_cylinder)
-                    print n
+                    # print n
 
 def enhancement_whole_image(model_path,sample_path, imgs, output_name='reconstruction/gen:0'):
     imgs = glob.glob('/Data/Rolled/NISTSD4/Image_Aligned'+'/*.jpeg')
@@ -594,7 +594,7 @@ def enhancement_whole_image(model_path,sample_path, imgs, output_name='reconstru
                     maxV = np.max(minutiae_cylinder)
                     minutiae_cylinder = (minutiae_cylinder-minV)/(maxV-minV)*255
                     cv2.imwrite( (sample_path+'test_%03d.jpeg'%(k+1)), minutiae_cylinder)
-                    print h,w
+                    # print h,w
 
 def get_args():
     parser = argparse.ArgumentParser()

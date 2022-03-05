@@ -112,8 +112,8 @@ def gabor_filtering_pixel(img, dir_map, fre_map, mask=None, block_size=16, angle
 
     sh = 10
     sw = 10
-    for i in xrange(10, h-10-1):
-        for j in xrange(10, w-10-1):
+    for i in range(10, h-10-1):
+        for j in range(10, w-10-1):
             if mask[i, j] == 0:
                 continue
 
@@ -192,9 +192,9 @@ def gabor_filtering_pixel2(img, dir_map, fre_map, mask=None, block_size=16, angl
     pixels_per_thread = candi_num // thread_num
     result_array = Array('f', candi_num)
 
-    for k in xrange(0, thread_num):
+    for k in range(0, thread_num):
         idx_list = []
-        for n in xrange(0, pixels_per_thread):
+        for n in range(0, pixels_per_thread):
             p = k * pixels_per_thread + n
             if p >= candi_num:
                 break
@@ -207,7 +207,7 @@ def gabor_filtering_pixel2(img, dir_map, fre_map, mask=None, block_size=16, angl
     for t in threads:
         t.join()
 
-    for k in xrange(candi_num):
+    for k in range(candi_num):
         i = candi_ind[0][k]
         j = candi_ind[1][k]
         enh_img[i, j] = result_array[k]

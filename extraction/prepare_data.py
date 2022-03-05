@@ -182,7 +182,7 @@ def extract_minutiae_cylinder(img_input, minutiae_input, ROI=None, num_ori=12, a
         yy = minutiae[i, 1]
         if yy < 0 or xx < 0:
             continue
-            print xx, yy
+            print((xx, yy))
             minu_num = minutiae.shape[0]
             fig, ax = plt.subplots(1)
             ax.set_aspect('equal')
@@ -287,7 +287,7 @@ def get_minutiae_from_cylinder(minutiae_cylinder, thr=0.5):
             pred = 0.5 * (y3 - 4 * y2) / (y3 - 2 * y2)
             confidence = -(2 * y2 - 0.5 * y3) * (2 * y2 - 0.5 * y3) / (2 * y3 - 4 * y2) + v
             if confidence < v:
-                print confidence, v
+                print(confidence, v)
             ori_ind = ind_1 + pred
             ori = ori_ind * 1.0 / c * 2 * math.pi
             minutiae.append([j, i, ori, confidence])  # v is the confidence
@@ -390,7 +390,7 @@ def extract_minutiae_cylinder_2c(img, minutiae, ROI, num_ori=12):
         xx = minutiae[i, 0]
         yy = minutiae[i, 1]
         if yy < 0 or xx < 0:
-            print xx, yy
+            print((xx, yy))
         weight = np.exp(-((X - xx) * (X - xx) + (Y - yy) * (Y - yy)) / sigma)
 
         ori = minutiae[i, 2]
@@ -448,11 +448,11 @@ def refine_minutiae(minutiae, dist_thr=10, ori_dist=np.pi / 4):
     flag = np.ones((minu_num,), dtype=np.int)
     if len(minutiae) == 0:
         return minutiae
-    for i in xrange(minu_num):
+    for i in range(minu_num):
         x0 = minutiae[i, 0]
         y0 = minutiae[i, 1]
         ori0 = minutiae[i, 2]
-        for j in xrange(i + 1, minu_num):
+        for j in range(i + 1, minu_num):
             x1 = minutiae[j, 0]
             y1 = minutiae[j, 1]
             ori1 = minutiae[j, 2]
@@ -478,11 +478,11 @@ def process_kais_markup(pathname='/markup/data/selected_prints_templates_Kai/',
     subjects = glob.glob(pathname + '*')
 
     for i, subject in enumerate(subjects):
-        print i
+        print(i)
         feature_file = subject + '/feature.mat'
         subjectID = subject.split('/')[-1]
         if os.path.isfile(feature_file):
-            print feature_file
+            print(feature_file)
             x = loadmat(feature_file)
             if 'minutiae_rolled' in x.keys():
                 img, ROI, minutiae_cylinder = extract_minutiae_cylinder(x['img_rolled'], x['minutiae_rolled'],
@@ -574,7 +574,7 @@ def process_MSPLatents_markup(pathname='/markup/data/selected_prints_templates_K
     files = glob.glob(pathname + '*.mat')
     files.sort()
     for file in files:
-        print file
+        print(file)
         filename = file.split('/')[-1].split('.')[0]
         latent_name, rolled_name = filename.split('_vs_')
         x = loadmat(file)
@@ -627,7 +627,7 @@ def process_FVC_markup_from_minutiae(pathname,
     mat_files.sort()
     for i, mat_file in enumerate(mat_files):
         fname = os.path.basename(mat_file)
-        print i, fname
+        print((i, fname))
         x = loadmat(mat_file)
         img = x['img']
         h, w = img.shape
@@ -662,7 +662,7 @@ def process_HighSign_markup_from_minutiae(img_path, minu_path,
     from scipy import misc
     for i, minu_file in enumerate(minu_files):
         fname = os.path.basename(minu_file)
-        print i, minu_file
+        print((i, minu_file))
         img_file = img_path + fname[:-3] + 'bmp'
         img0 = misc.imread(img_file, mode='L')
         minutiae = np.loadtxt(minu_file, delimiter=',')
@@ -692,7 +692,7 @@ def process_FVC_markup(pathname, data_path):
 
     for i, mat_file in enumerate(mat_files):
         fname = os.path.basename(mat_file)
-        print i, fname
+        print((i, fname))
         x = loadmat(mat_file)
         minutiae_cylinder = x['minutiae_cylinder']
         minutiae_cylinder = np.uint8(minutiae_cylinder)
