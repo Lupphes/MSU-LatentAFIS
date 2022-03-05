@@ -12,15 +12,17 @@ This work is sponsored by [IARPA](https://www.iarpa.gov/).
 ## Demo video
 [![](http://img.youtube.com/vi/YBFG9n8-07E/0.jpg)](https://www.youtube.com/watch?v=YBFG9n8-07E "MSU Latent AFIS")
 
-## <img src="https://image.flaticon.com/icons/svg/149/149366.svg" width="20"/> News
+## News
 | Date     | Update |
 |----------|--------|
+| 2022-03-05 | Lupphes started modification for Python3.7 fork |
 | 2019-04-24 | Template extraction and Matching code |
 | 2019-04-28 | Added sample latent images |
 
 ## Requirements
 Feature extraction code:
-Please refer to [environment.yml](environment.yml) file
+~~Please refer to [environment.yml](environment.yml) file~~
+Please refer to [requirements.txt](requirements.txt)
 
 Matching code:
 Please install the required C++ dependencies:
@@ -39,25 +41,20 @@ The latent fingerprint images in NIST SD27 are divided into three categories, "g
 ## Getting Started
 Place the `models` folder in the root of the repository (same level as `extraction` and `matching` folders).
 
-Further detailed instructions for installation and use can be found in the [User Guide PDF](MSU_Latent_AFIS_User_Guide.pdf).
+Further detailed **older** instructions for installation and use can be found in the [User Guide PDF](MSU_Latent_AFIS_User_Guide.pdf).
 Short instructions:
+
+### **UPDATE 2022**
+
 Use this command to create the environment and install the packages:
 ```
-conda env create -n latentafis -f environment.yml
+virtualenv --python=$(which python3.7) venv
 ```
-After conda is finished creating the environment and installing the packages, activate the new environment:
 ```
-conda activate latentafis
+source venv/bin/activate
 ```
-On some systems, you may need to use:
 ```
-source activate latentafis
-```
-
-In the case of Tensorpack, the correct version is not available through conda. To install through pip, use these commands:
-```
-pip install opencv-python==3.4.2.17
-pip install tensorpack==0.8.9
+pip3 install -r requirements.txt
 ```
 
 Change ``` afis.config ``` file for your custom path.
