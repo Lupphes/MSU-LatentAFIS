@@ -86,7 +86,7 @@ class FeatureExtractionRolled:
         flag = np.ones((minu_num,), np.uint8)
         h, w = mask.shape[:2]
         for i in range(minu_num):
-            x, y = np.int(mnt[i, 0]), np.int(mnt[i, 1])
+            x, y = np.int64(mnt[i, 0]), np.int64(mnt[i, 1])
 
             if x < r or y < r or x > w - r - 1 or y > h - r - 1:
                 flag[i] = 0
@@ -181,8 +181,8 @@ class FeatureExtractionRolled:
 
             # Obtaining mask
             mask = quality_map_aec > 0.45  # 0.35  # 0.45 in latent images
-            mask = binary_closing(mask, np.ones((3, 3))).astype(np.int)
-            mask = binary_opening(mask, np.ones((3, 3))).astype(np.int)
+            mask = binary_closing(mask, np.ones((3, 3))).astype(np.int64)
+            mask = binary_opening(mask, np.ones((3, 3))).astype(np.int64)
             blkmask_ssim = get_maps.SSIM(stft_texture_img, aec_img, thr=0.2)
             blkmask = blkmask_ssim * mask
             blk_h, blk_w = blkmask.shape

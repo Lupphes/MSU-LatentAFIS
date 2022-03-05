@@ -181,7 +181,7 @@ def ROC(score_vec, label_vec, thresholds=None, thred_FARs=False, get_false_indic
     ''' Compute Receiver operating characteristic (ROC) with a score and label vector.'''
     assert score_vec.ndim == 1
     assert score_vec.shape == label_vec.shape
-    assert label_vec.dtype == np.bool
+    assert label_vec.dtype == bool
     
     if thresholds is None:
         thresholds = find_thresholds_by_FAR(score_vec, label_vec, thred_FARs=thred_FARs)
@@ -259,7 +259,7 @@ def score_per_pair(metric,feat,template,pair):
 def find_thresholds_by_FAR(score_vec, label_vec, thred_FARs=False, epsilon=1e-8):
     assert len(score_vec.shape)==1
     assert score_vec.shape == label_vec.shape
-    assert label_vec.dtype == np.bool
+    assert label_vec.dtype == bool
     score_neg = score_vec[~label_vec]
     score_neg[::-1].sort()
     num_neg = len(score_neg)
@@ -289,7 +289,7 @@ def accuracy(score_vec, label_vec, threshold=None):
     assert len(score_vec.shape)==1
     assert len(label_vec.shape)==1
     assert score_vec.shape == label_vec.shape
-    assert label_vec.dtype==np.bool
+    assert label_vec.dtype==bool
     
     # find thresholds by TAR
     if threshold is None:

@@ -239,12 +239,12 @@ def STFT(img, R=100):
 def local_equalize(imgfiles):
     patch_kw = dict(patch_size=5,      # 5x5 patches
                     patch_distance=6,  # 13x13 search area
-                    multichannel=True)
+                    channel_axis=-1)
     for imgfile in imgfiles:
 
         img = skimage.io.imread(imgfile)
         # estimate the noise standard deviation from the noisy image
-        sigma_est = np.mean(estimate_sigma(img, multichannel=True))
+        sigma_est = np.mean(estimate_sigma(img, channel_axis=-1))
         print("estimated noise standard deviation = {}".format(sigma_est))
 
         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(8, 6),

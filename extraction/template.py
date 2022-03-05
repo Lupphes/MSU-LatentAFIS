@@ -17,9 +17,9 @@ class MinuTemplate():
         self.mask = mask
         # set the orientation field in the background as -10
         for i in range(blkH):
-            y = np.int(i * block_size + block_size // 2)
+            y = np.int64(i * block_size + block_size // 2)
             for j in range(blkW):
-                x = np.int(j * block_size + block_size // 2)
+                x = np.int64(j * block_size + block_size // 2)
                 if mask is not None and mask[y, x] == 0:
                     oimg[i, j] = -10
 

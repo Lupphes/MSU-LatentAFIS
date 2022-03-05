@@ -171,7 +171,7 @@ def get_dir_map_gradient(img, mask=None, block_size=16, sigma=5):
     blkW = w // block_size + 1
 
     img = img.astype(dtype=np.float, copy=False)
-    img = gaussian(img, 0.8, multichannel=False, mode='reflect')
+    img = gaussian(img, 0.8, channel_axis=None, mode='reflect')
     gy = np.gradient(img, axis=0)
     gx = np.gradient(img, axis=1)
 
@@ -179,9 +179,9 @@ def get_dir_map_gradient(img, mask=None, block_size=16, sigma=5):
     Gxy = gx * gy
     Gyy = gy * gy
 
-    Gxx = gaussian(Gxx, sigma, multichannel=False, mode='reflect')
-    Gxy = gaussian(Gxy, sigma, multichannel=False, mode='reflect')
-    Gyy = gaussian(Gyy, sigma, multichannel=False, mode='reflect')
+    Gxx = gaussian(Gxx, sigma, channel_axis=None, mode='reflect')
+    Gxy = gaussian(Gxy, sigma, channel_axis=None, mode='reflect')
+    Gyy = gaussian(Gyy, sigma, channel_axis=None, mode='reflect')
 
     if mask is not None:
         Gxx[mask == 0] = 0
@@ -271,8 +271,8 @@ def smooth_dir_map(dir_map, sigma=2.0, mask=None):
         cos2Theta[mask == 0] = 0
         sin2Theta[mask == 0] = 0
 
-    cos2Theta = gaussian(cos2Theta, sigma, multichannel=False, mode='reflect')
-    sin2Theta = gaussian(sin2Theta, sigma, multichannel=False, mode='reflect')
+    cos2Theta = gaussian(cos2Theta, sigma, channel_axis=None, mode='reflect')
+    sin2Theta = gaussian(sin2Theta, sigma, channel_axis=None, mode='reflect')
 
     dir_map = np.arctan2(sin2Theta, cos2Theta) * 0.5
 
@@ -406,11 +406,11 @@ def get_quality_map_ori_dict(img, dict, spacing, dir_map=None, block_size=16):
     fre_map = np.zeros((blkH, blkW), dtype=np.float)
     ori_num = len(dict)
     dir_ind = dir_map * ori_num / math.pi
-    dir_ind = dir_ind.astype(np.int)
+    dir_ind = dir_ind.astype(np.int64)
     dir_ind = dir_ind % ori_num
 
     patch_size = np.sqrt(dict[0].shape[1])
-    patch_size = patch_size.astype(np.int)
+    patch_size = patch_size.astype(np.int64)
     pad_size = (patch_size - block_size) // 2
     img = np.lib.pad(img, (pad_size, pad_size), 'symmetric')
     for i in range(0, blkH):
@@ -479,8 +479,8 @@ def SSIM(img, temp_img, block_size=16, thr=0.65):
 
     quality = cv2.GaussianBlur(quality, (5, 5), 0)
     blkmask = quality > thr
-    blkmask = binary_closing(blkmask, np.ones((3, 3))).astype(np.int)
-    blkmask = binary_opening(blkmask, np.ones((3, 3))).astype(np.int)
+    blkmask = binary_closing(blkmask, np.ones((3, 3))).astype(np.int64)
+    blkmask = binary_opening(blkmask, np.ones((3, 3))).astype(np.int64)
 
     return blkmask
 
@@ -499,7 +499,7 @@ def get_quality_map_dict(img, dict, ori, spacing, block_size=16,
     fre_map = np.zeros((blkH, blkW), dtype=np.float)
 
     patch_size = np.sqrt(dict.shape[0])
-    patch_size = patch_size.astype(np.int)
+    patch_size = patch_size.astype(np.int64)
     pad_size = (patch_size - block_size) // 2
     img = np.lib.pad(img, (pad_size, pad_size), 'symmetric')
 
@@ -570,7 +570,7 @@ def get_quality_map_dict_coarse(img, dict, ori, spacing, block_size=16,
     fre_map = np.zeros((blkH, blkW), dtype=np.float)
 
     patch_size = np.sqrt(dict.shape[0])
-    patch_size = patch_size.astype(np.int)
+    patch_size = patch_size.astype(np.int64)
     pad_size = (patch_size - block_size) // 2
     img = np.lib.pad(img, (pad_size, pad_size), 'symmetric')
 
@@ -673,7 +673,7 @@ def get_maps_STFT(img, patch_size=64, block_size=16, preprocess=False):
     dir = np.arctan2(y, x)
     dir[dir < 0] = dir[dir < 0] + math.pi
     dir_ind = np.floor(dir / (math.pi / nrof_dirs))
-    dir_ind = dir_ind.astype(np.int, copy=False)
+    dir_ind = dir_ind.astype(np.int64, copy=False)
     dir_ind[dir_ind == nrof_dirs] = 0
 
     dir_ind_list = []

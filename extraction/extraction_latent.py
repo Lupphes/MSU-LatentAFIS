@@ -197,8 +197,8 @@ class FeatureExtraction_Latent:
 
         # Obtaining mask
         bmask_aec = quality_map_aec > 0.45
-        bmask_aec = binary_closing(bmask_aec, np.ones((3, 3))).astype(np.int)
-        bmask_aec = binary_opening(bmask_aec, np.ones((3, 3))).astype(np.int)
+        bmask_aec = binary_closing(bmask_aec, np.ones((3, 3))).astype(np.int64)
+        bmask_aec = binary_opening(bmask_aec, np.ones((3, 3))).astype(np.int64)
         blkmask_ssim = get_maps.SSIM(stft_texture_img, aec_img, thr=0.2)
         blkmask = blkmask_ssim * bmask_aec
         blk_h, blk_w = blkmask.shape
@@ -215,11 +215,11 @@ class FeatureExtraction_Latent:
         label(mask, structures, output=labels)
         component_sizes = np.bincount(labels.ravel())
         component_sizes = sorted(component_sizes, reverse=True)
-        print(component_sizes)
+        print(component_sizes) 
 
         if len(component_sizes) > 1:
             min_size = component_sizes[1]
-            mask = remove_small_objects(mask.astype(np.bool), min_size=min_size)
+            mask = remove_small_objects(mask.astype(bool), min_size=min_size)
             mask = mask.astype(np.uint8)
 
         # Saving mask
@@ -614,8 +614,8 @@ class FeatureExtraction_Latent:
         for i in range(minu_num):
             x = mnt[i, 0]
             y = mnt[i, 1]
-            x = np.int(x)
-            y = np.int(y)
+            x = np.int64(x)
+            y = np.int64(y)
             if x < R or y < R or x > w - R - 1 or y > h - R - 1:
                 flag[i] = 0
             elif(mask[y - R, x - R] == 0 or mask[y - R, x + R] == 0 or
@@ -627,7 +627,7 @@ class FeatureExtraction_Latent:
     def feature_extraction(self, image_dir, template_dir=None,
                            minu_path=None, N1=0, N2=258, edited_mnt=False):
         """Feature extraction for a batch of images"""
-        img_files = glob.glob(image_dir + '*.bmp')
+        img_files = glob.glob(image_dir + '*.jp2')
         assert(len(img_files) > 0)
 
         if not os.path.exists(template_dir):
@@ -659,7 +659,7 @@ class FeatureExtraction_Latent:
                 )
 
             stop = timeit.default_timer()
-            print(stop - start)
+            # print(stop - start) random number
 
             fname = template_dir + os.path.splitext(img_name)[0] + '.dat'
             template.Template2Bin_Byte_TF_C(fname, latent_t,

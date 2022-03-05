@@ -144,7 +144,7 @@ def extract_patches(minutiae, img, patchIndexV, patch_type=1, patch_size=96):
         oriInd = round(ori / (math.pi * 2) * oriNum)
         if oriInd >= oriNum:
             oriInd -= oriNum
-        oriInd = np.int(oriInd)
+        oriInd = np.int64(oriInd)
         xv = patchIndexV['x'][oriInd] + x
         yv = patchIndexV['y'][oriInd] + y
         xv[xv < 0] = 0

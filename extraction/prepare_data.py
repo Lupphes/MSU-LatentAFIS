@@ -445,7 +445,7 @@ def get_minutiae_from_cylinder_2c(minutiae_cylinder, thr=0.5):
 
 def refine_minutiae(minutiae, dist_thr=10, ori_dist=np.pi / 4):
     minu_num = len(minutiae)
-    flag = np.ones((minu_num,), dtype=np.int)
+    flag = np.ones((minu_num,), dtype=np.int64)
     if len(minutiae) == 0:
         return minutiae
     for i in range(minu_num):

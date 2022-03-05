@@ -110,7 +110,7 @@ class ImportGraph():
         dists = scipy.spatial.distance.cdist(rawMinu[:, :2], rawMinu[:, :2], 'euclidean')
         minu_num = rawMinu.shape[0]
 
-        flag = np.ones((minu_num,), np.bool)
+        flag = np.ones((minu_num,), bool)
         neighor_num = 3
         neighor_thr = 12
 

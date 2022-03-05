@@ -56,8 +56,8 @@ class FeatureExtraction_Rolled:
         for i in range(minu_num):
             x = mnt[i,0]
             y = mnt[i,1]
-            x = np.int(x)
-            y = np.int(y)
+            x = np.int64(x)
+            y = np.int64(y)
             if x<R or y<R or x>w-R-1 or y>h-R-1:
                 flag[i] = 0
             elif mask[y-R,x-R]==0 or mask[y-R,x+R]==0 or mask[y+R,x-R]==0 or mask[y+R,x+R]==0:

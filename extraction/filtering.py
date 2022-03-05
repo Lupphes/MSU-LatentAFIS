@@ -10,7 +10,7 @@ def gabor_filtering_block(img, dir_map, fre_map, mask=None, patch_size=64, block
     ovp_size = (patch_size - block_size) // 2
     h0, w0 = img.shape
     if mask is None:
-        mask = np.ones((h0, w0), dtype=np.int)
+        mask = np.ones((h0, w0), dtype=np.int64)
     img = np.lib.pad(img, (ovp_size, ovp_size), 'symmetric')
 
     x, y = np.meshgrid(range(-patch_size / 2, patch_size / 2), range(-patch_size / 2, patch_size / 2))
