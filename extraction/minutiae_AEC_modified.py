@@ -12,7 +12,9 @@ from tensorpack import *
 from tensorpack.utils.viz import *
 from tensorpack.tfutils.summary import add_moving_summary
 from tensorpack.tfutils.scope_utils import auto_reuse_variable_scope
-#from tensorpack.utils.globvars import globalns as opt
+from tensorpack.tfutils import argscope
+
+from tensorpack.utils.globvars import globalns as opt
 from tensorpack import (Trainer, QueueInput, TowerContext)
 
 import prepare_data
@@ -20,8 +22,8 @@ import preprocessing as LP
 import show
 
 # global vars
-# opt.SHAPE = 64
-# opt.BATCH = 128
+opt.SHAPE = 64
+opt.BATCH = 128
 
 
 class ImportGraph():
@@ -229,7 +231,7 @@ class AEC_Model(ModelDesc):
         Assign self.g_vars to the parameters under scope `g_scope`,
         and same with self.d_vars.
         """
-        self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
+        self.vars = tf.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
         assert self.vars
 
     @auto_reuse_variable_scope
@@ -304,7 +306,7 @@ class Cao_Model(ModelDesc):
         Assign self.g_vars to the parameters under scope `g_scope`,
         and same with self.d_vars.
         """
-        self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
+        self.vars = tf.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
         assert self.vars
 
     @auto_reuse_variable_scope
@@ -374,7 +376,7 @@ class UNet_Model(ModelDesc):
         Assign self.g_vars to the parameters under scope `g_scope`,
         and same with self.d_vars.
         """
-        self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
+        self.vars = tf.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
         assert self.vars
 
     def reconstruction(self, imgs):
@@ -512,11 +514,11 @@ def minutiae_extraction3(model_path, sample_path, imgs, output_name='reconstruct
     with tf.Graph().as_default():
 
         with TowerContext('', is_training=False):
-            with tf.Session() as sess:
+            with tf.compat.v1.Session() as sess:
                 is_training = get_current_tower_context().is_training
                 load_model(model_path)
-                images_placeholder = tf.get_default_graph().get_tensor_by_name('sub:0')
-                minutiae_cylinder_placeholder = tf.get_default_graph().get_tensor_by_name(output_name)
+                images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('sub:0')
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
                 for k, file in enumerate(imgs):
                     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
                     h, w = img.shape
@@ -573,11 +575,11 @@ def minutiae_extraction_latent(model_path, sample_path, imgs, output_name='recon
     with tf.Graph().as_default():
 
         with TowerContext('', is_training=False):
-            with tf.Session() as sess:
+            with tf.compat.v1.Session() as sess:
                 is_training = get_current_tower_context().is_training
                 load_model(model_path)
-                images_placeholder = tf.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')  # sub:0
-                minutiae_cylinder_placeholder = tf.get_default_graph().get_tensor_by_name(output_name)
+                images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')  # sub:0
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
                 for k, file in enumerate(imgs):
                     print(file)
                     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
@@ -634,11 +636,11 @@ def minutiae_whole_image(model_path, sample_path, imgs, output_name='reconstruct
     imgs.sort()
     with tf.Graph().as_default():
         with TowerContext('', is_training=False):
-            with tf.Session() as sess:
+            with tf.compat.v1.Session() as sess:
                 is_training = get_current_tower_context().is_training
                 load_model(model_path)
-                images_placeholder = tf.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')
-                minutiae_cylinder_placeholder = tf.get_default_graph().get_tensor_by_name(output_name)
+                images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
                 for n, file in enumerate(imgs):
                     img0 = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
                     img = img0 / 128.0 - 1
@@ -683,7 +685,7 @@ def load_model(model):
         print('Metagraph file: %s' % meta_file)
         print('Checkpoint file: %s' % ckpt_file)
 
-        saver = tf.train.import_meta_graph(os.path.join(model_exp, meta_file))
+        saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_exp, meta_file))
         saver.restore(tf.get_default_session(), ckpt_file)
 
 

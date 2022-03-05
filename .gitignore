@@ -5,6 +5,7 @@ Papers/
 image_out/
 image_src/
 venv/
+venv38/
 
 *.pyc
 

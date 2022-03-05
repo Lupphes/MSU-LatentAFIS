@@ -29,7 +29,7 @@ import re
 
 def load_model(model_dir, meta_file, ckpt_file):
     model_dir_exp = os.path.expanduser(model_dir)
-    saver = tf.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
+    saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
     saver.restore(tf.get_default_session(), os.path.join(model_dir_exp, ckpt_file))
 
 

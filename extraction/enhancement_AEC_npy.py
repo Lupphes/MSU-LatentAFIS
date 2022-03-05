@@ -58,17 +58,17 @@ class ImportGraph():
     def __init__(self, model_dir):
         # create local graph and use it in the session
         self.graph = tf.Graph()
-        self.sess = tf.Session(graph=self.graph)
+        self.sess = tf.compat.v1.Session(graph=self.graph)
         self.weight = get_weights(opt.SHAPE, opt.SHAPE,1, sigma=None)
         with self.graph.as_default():
             meta_file, ckpt_file = get_model_filenames(os.path.expanduser(model_dir))
             model_dir_exp = os.path.expanduser(model_dir)
-            saver = tf.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
+            saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
             saver.restore(self.sess, os.path.join(model_dir_exp, ckpt_file))
 
-            self.images_placeholder = tf.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')
+            self.images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')
             output_name = 'reconstruction/gen:0'
-            self.minutiae_cylinder_placeholder = tf.get_default_graph().get_tensor_by_name(output_name)
+            self.minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
             self.shape = self.minutiae_cylinder_placeholder.get_shape()
 
     def run(self, img,minu_thr=0.2):
@@ -217,7 +217,7 @@ class Model(ModelDesc):
         Assign self.g_vars to the parameters under scope `g_scope`,
         and same with self.d_vars.
         """
-        self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
+        self.vars = tf.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
         assert self.vars
 
     @auto_reuse_variable_scope
@@ -496,7 +496,7 @@ def load_model(model):
         print('Metagraph file: %s' % meta_file)
         print('Checkpoint file: %s' % ckpt_file)
 
-        saver = tf.train.import_meta_graph(os.path.join(model_exp, meta_file))
+        saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_exp, meta_file))
         saver.restore(tf.get_default_session(), ckpt_file)
 
 
@@ -521,12 +521,12 @@ def enhancement2(model_path,sample_path, imgs, output_name='reconstruction/gen:0
     with tf.Graph().as_default():
 
         with TowerContext('', is_training=False):
-            with tf.Session() as sess:
+            with tf.compat.v1.Session() as sess:
                 is_training= get_current_tower_context().is_training
                 load_model(model_path)
-                images_placeholder = tf.get_default_graph().get_tensor_by_name('sub:0')
+                images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('sub:0')
                 #is_training
-                minutiae_cylinder_placeholder = tf.get_default_graph().get_tensor_by_name(output_name)
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
                 for k, file in enumerate(imgs):
                     img = cv2.imread(file,cv2.IMREAD_GRAYSCALE)
                     u, texture = LP.FastCartoonTexture(img)
@@ -570,12 +570,12 @@ def enhancement_whole_image(model_path,sample_path, imgs, output_name='reconstru
     with tf.Graph().as_default():
 
         with TowerContext('', is_training=False):
-            with tf.Session() as sess:
+            with tf.compat.v1.Session() as sess:
                 is_training= get_current_tower_context().is_training
                 load_model(model_path)
-                images_placeholder = tf.get_default_graph().get_tensor_by_name('sub:0')
+                images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('sub:0')
                 #is_training
-                minutiae_cylinder_placeholder = tf.get_default_graph().get_tensor_by_name(output_name)
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
                 for k, file in enumerate(imgs):
                     img = cv2.imread(file,cv2.IMREAD_GRAYSCALE)
                     img = Image.fromarray(img)
