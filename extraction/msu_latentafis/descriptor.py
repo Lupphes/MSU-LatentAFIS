@@ -27,8 +27,7 @@ class ImportGraph():
             model_dir_exp = os.path.expanduser(model_dir)
             saver = tf.compat.v1.train.import_meta_graph(
                 os.path.abspath(os.path.join(model_dir_exp, meta_file)))
-            saver.restore(self.sess, os.path.abspath(
-                ckpt_file))
+            saver.restore(self.sess, os.path.join(model_dir_exp, ckpt_file))
 
             self.images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(input_name)
             self.phase_train_placeholder = tf.compat.v1.get_default_graph(
