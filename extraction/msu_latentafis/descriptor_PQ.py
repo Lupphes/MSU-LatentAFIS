@@ -285,7 +285,7 @@ def parse_arguments(argv):
 
 def encode_PQ(input_dir, output_dir, fprint_type):
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    with open(dir_path + '/../afis.config') as config_file:
+    with open(dir_path + '/afis.config') as config_file:
         config = json.load(config_file)
     embedding_size = 96
     stride = 16

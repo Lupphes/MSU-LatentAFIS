@@ -1,7 +1,6 @@
 import sys
 import json
 import os
-import pickle
 from msu_latentafis.descriptor_DR import template_compression_single, template_compression
 from msu_latentafis.descriptor_PQ import encode_PQ, encode_PQ_single
 from msu_latentafis.extraction_latent import main_single_image, parse_arguments, main
@@ -55,8 +54,4 @@ else:   # Handling a directory of images
         input_dir=tdir, output_dir=tdir, fprint_type='latent'
     )
 
-    with open('fingerprint.pickle', 'wb') as handle:
-        pickle.dump(test, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    print(test.minu_model)
     print("Exiting...")
