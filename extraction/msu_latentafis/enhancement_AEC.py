@@ -26,19 +26,25 @@ class ImportGraph():
         self.sess = tf.compat.v1.Session(graph=self.graph)
         self.weight = get_weights(opt.SHAPE, opt.SHAPE, 1, sigma=None)
         with self.graph.as_default():
-            meta_file, ckpt_file = get_model_filenames(os.path.expanduser(model_dir))
+            meta_file, ckpt_file = get_model_filenames(
+                os.path.expanduser(model_dir))
             model_dir_exp = os.path.expanduser(model_dir)
-            saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
-            saver.restore(self.sess, os.path.join(model_dir_exp, ckpt_file))
+            saver = tf.compat.v1.train.import_meta_graph(
+                os.path.abspath(os.path.join(model_dir_exp, meta_file)))
+            saver.restore(self.sess, os.path.abspath(
+                os.path.join(model_dir_exp, ckpt_file)))
 
-            self.images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')
+            self.images_placeholder = tf.compat.v1.get_default_graph(
+            ).get_tensor_by_name('QueueInput/input_deque:0')
             output_name = 'reconstruction/gen:0'
-            self.minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
+            self.minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph(
+            ).get_tensor_by_name(output_name)
             self.shape = self.minutiae_cylinder_placeholder.get_shape()
 
     def run(self, img, minu_thr=0.2):
         h, w = img.shape
-        nrof_samples = len(range(0, h, opt.SHAPE // 2)) * len(range(0, w, opt.SHAPE // 2))
+        nrof_samples = len(range(0, h, opt.SHAPE // 2)) * \
+            len(range(0, w, opt.SHAPE // 2))
         patches = np.zeros((nrof_samples, opt.SHAPE, opt.SHAPE, 1))
         n = 0
         x = []
@@ -51,12 +57,12 @@ class ImportGraph():
                 patches[n, :, :, :] = patch
                 n = n + 1
         feed_dict = {self.images_placeholder: patches}
-        minutiae_cylinder_array = self.sess.run(self.minutiae_cylinder_placeholder, feed_dict=feed_dict)
+        minutiae_cylinder_array = self.sess.run(
+            self.minutiae_cylinder_placeholder, feed_dict=feed_dict)
 
         minutiae_cylinder = np.zeros((h, w, 1))
         for i in range(n):
-            minutiae_cylinder[y[i]:y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] = minutiae_cylinder[y[i]
-                :y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] + minutiae_cylinder_array[i] * self.weight
+            minutiae_cylinder[y[i]:y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] = minutiae_cylinder[y[i]                                                                                                   :y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] + minutiae_cylinder_array[i] * self.weight
 
         minutiae_cylinder = minutiae_cylinder[:, :, 0]
         minV = np.min(minutiae_cylinder)
@@ -72,7 +78,8 @@ class ImportGraph():
         img = np.expand_dims(img, axis=2)
         img = np.expand_dims(img, axis=0)
         feed_dict = {self.images_placeholder: img}
-        minutiae_cylinder = self.sess.run(self.minutiae_cylinder_placeholder, feed_dict=feed_dict)
+        minutiae_cylinder = self.sess.run(
+            self.minutiae_cylinder_placeholder, feed_dict=feed_dict)
 
         minutiae_cylinder = np.squeeze(minutiae_cylinder, axis=0)
         minutiae_cylinder = np.squeeze(minutiae_cylinder, axis=2)
@@ -98,7 +105,8 @@ def array2PIL(arr, size):
 
 
 def upsample(net, nf=32, upsample_factor=2):
-    upsample_filter_np = upsampling.bilinear_upsample_weights(upsample_factor, nf)
+    upsample_filter_np = upsampling.bilinear_upsample_weights(
+        upsample_factor, nf)
     upsample_filter_tensor = tf.constant(upsample_filter_np)
     downsampled_logits_shape = net.get_shape()
 
@@ -173,7 +181,8 @@ class ImageFromFile_AutoEcoder(RNGDataFlow):
             im_input[:, :, 0] += gauss
 
             sigma_int = np.random.randint(0, 4) * 2 + 1
-            blur = cv2.GaussianBlur(im_input[:, :, 0], (sigma_int, sigma_int), 0)
+            blur = cv2.GaussianBlur(
+                im_input[:, :, 0], (sigma_int, sigma_int), 0)
             im_input[:, :, 0] = blur
 
             im_label = im_label / 128.0 - 1
@@ -191,7 +200,8 @@ class Model(ModelDesc):
         Assign self.g_vars to the parameters under scope `g_scope`,
         and same with self.d_vars.
         """
-        self.vars = tf.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
+        self.vars = tf.get_collection(
+            tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
         assert self.vars
 
     @auto_reuse_variable_scope
@@ -228,29 +238,41 @@ class Model(ModelDesc):
         nf = 32
         net = imgs
 
-        net = tf.layers.conv2d(net, nf, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(1))
-        net = tf.layers.max_pooling2d(net, (2, 2), strides=(2, 2), name="pool_{}".format(1))
+        net = tf.layers.conv2d(
+            net, nf, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(1))
+        net = tf.layers.max_pooling2d(
+            net, (2, 2), strides=(2, 2), name="pool_{}".format(1))
 
-        net = tf.layers.conv2d(net, nf * 2, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(2))
-        net = tf.layers.max_pooling2d(net, (2, 2), strides=(2, 2), name="pool_{}".format(2))
+        net = tf.layers.conv2d(
+            net, nf * 2, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(2))
+        net = tf.layers.max_pooling2d(
+            net, (2, 2), strides=(2, 2), name="pool_{}".format(2))
 
-        net = tf.layers.conv2d(net, nf * 4, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(3))
-        net = tf.layers.max_pooling2d(net, (2, 2), strides=(2, 2), name="pool_{}".format(3))
+        net = tf.layers.conv2d(
+            net, nf * 4, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(3))
+        net = tf.layers.max_pooling2d(
+            net, (2, 2), strides=(2, 2), name="pool_{}".format(3))
 
-        net = tf.layers.conv2d(net, nf * 8, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(4))
-        net = tf.layers.max_pooling2d(net, (2, 2), strides=(2, 2), name="pool_{}".format(4))
+        net = tf.layers.conv2d(
+            net, nf * 8, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(4))
+        net = tf.layers.max_pooling2d(
+            net, (2, 2), strides=(2, 2), name="pool_{}".format(4))
 
         net = upsample(net, nf * 8, upsample_factor=2)
-        net = tf.layers.conv2d(net, nf * 4, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(5))
+        net = tf.layers.conv2d(
+            net, nf * 4, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(5))
 
         net = upsample(net, nf * 4, upsample_factor=2)
-        net = tf.layers.conv2d(net, nf * 2, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(6))
+        net = tf.layers.conv2d(
+            net, nf * 2, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(6))
 
         net = upsample(net, nf * 2, upsample_factor=2)
-        net = tf.layers.conv2d(net, nf * 1, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(7))
+        net = tf.layers.conv2d(
+            net, nf * 1, (3, 3), activation=tf.nn.relu, padding='same', name="conv_{}".format(7))
 
         net = upsample(net, nf, upsample_factor=2)
-        net = tf.layers.conv2d(net, 12, (3, 3), activation=tf.identity, padding='same', name="conv_{}".format(8))
+        net = tf.layers.conv2d(
+            net, 12, (3, 3), activation=tf.identity, padding='same', name="conv_{}".format(8))
         net = tf.tanh(net, name='gen')
 
         return net
@@ -312,7 +334,8 @@ class Model(ModelDesc):
         self.collect_variables()
 
     def _get_optimizer(self):
-        lr = symbolic_functions.get_scalar_var('learning_rate', 1e-4, summary=True)
+        lr = symbolic_functions.get_scalar_var(
+            'learning_rate', 1e-4, summary=True)
         opt = tf.train.AdamOptimizer(lr, beta1=0.5, beta2=0.9)
         return opt
 
@@ -350,7 +373,8 @@ class AutoEncoderTrainer(Trainer):
 
         # by default, run one d_min after one g_min
         with tf.name_scope('optimize'):
-            rec_min = opt.minimize(model.loss, var_list=model.vars, name='g_op')
+            rec_min = opt.minimize(
+                model.loss, var_list=model.vars, name='g_op')
         self.train_op = rec_min
 
         super(AutoEncoderTrainer, self).__init__(config)
@@ -430,7 +454,8 @@ def load_model(model):
         print('Metagraph file: %s' % meta_file)
         print('Checkpoint file: %s' % ckpt_file)
 
-        saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_exp, meta_file))
+        saver = tf.compat.v1.train.import_meta_graph(
+            os.path.join(model_exp, meta_file))
         saver.restore(tf.get_default_session(), ckpt_file)
 
 
@@ -438,9 +463,11 @@ def get_model_filenames(model_dir):
     files = os.listdir(model_dir)
     meta_files = [s for s in files if s.endswith('.meta')]
     if len(meta_files) == 0:
-        raise ValueError('No meta file found in the model directory (%s)' % model_dir)
+        raise ValueError(
+            'No meta file found in the model directory (%s)' % model_dir)
     elif len(meta_files) > 1:
-        raise ValueError('There should not be more than one meta file in the model directory (%s)' % model_dir)
+        raise ValueError(
+            'There should not be more than one meta file in the model directory (%s)' % model_dir)
     meta_file = meta_files[0]
     ckpt_file = tf.train.latest_checkpoint(model_dir)
     return meta_file, ckpt_file
@@ -458,7 +485,8 @@ def enhancement2(model_path, sample_path, imgs, output_name='reconstruction/gen:
                 is_training = get_current_tower_context().is_training
                 load_model(model_path)
                 images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('sub:0')
-                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph(
+                ).get_tensor_by_name(output_name)
                 for k, file in enumerate(imgs):
                     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
                     u, texture = LP.FastCartoonTexture(img)
@@ -466,28 +494,32 @@ def enhancement2(model_path, sample_path, imgs, output_name='reconstruction/gen:
                     h, w = img.shape
                     x = []
                     y = []
-                    nrof_samples = len(range(0, h, opt.SHAPE // 2)) * len(range(0, w, opt.SHAPE // 2))
+                    nrof_samples = len(range(0, h, opt.SHAPE // 2)) * \
+                        len(range(0, w, opt.SHAPE // 2))
                     patches = np.zeros((nrof_samples, opt.SHAPE, opt.SHAPE, 1))
                     n = 0
                     for i in range(0, h - opt.SHAPE + 1, opt.SHAPE // 2):
 
                         for j in range(0, w - opt.SHAPE + 1, opt.SHAPE // 2):
-                            patch = img[i:i + opt.SHAPE, j:j + opt.SHAPE, np.newaxis]
+                            patch = img[i:i + opt.SHAPE,
+                                        j:j + opt.SHAPE, np.newaxis]
                             x.append(j)
                             y.append(i)
                             patches[n, :, :, :] = patch
                             n = n + 1
                     feed_dict = {images_placeholder: patches}
-                    minutiae_cylinder_array = sess.run(minutiae_cylinder_placeholder, feed_dict=feed_dict)
+                    minutiae_cylinder_array = sess.run(
+                        minutiae_cylinder_placeholder, feed_dict=feed_dict)
 
                     minutiae_cylinder = np.zeros((h, w, 1))
                     for i in range(n):
-                        minutiae_cylinder[y[i]:y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] = minutiae_cylinder[y[i]
-                            :y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] + minutiae_cylinder_array[i] * weight
+                        minutiae_cylinder[y[i]:y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] = minutiae_cylinder[y[i]                                                                                                               :y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] + minutiae_cylinder_array[i] * weight
                     minV = np.min(minutiae_cylinder)
                     maxV = np.max(minutiae_cylinder)
-                    minutiae_cylinder = (minutiae_cylinder - minV) / (maxV - minV) * 255
-                    cv2.imwrite((sample_path + 'test_%03d.jpeg' % (k + 1)), minutiae_cylinder)
+                    minutiae_cylinder = (
+                        minutiae_cylinder - minV) / (maxV - minV) * 255
+                    cv2.imwrite((sample_path + 'test_%03d.jpeg' %
+                                (k + 1)), minutiae_cylinder)
 
 
 def enhancement_whole_image(model_path, sample_path, imgs, output_name='reconstruction/gen:0'):
@@ -501,7 +533,8 @@ def enhancement_whole_image(model_path, sample_path, imgs, output_name='reconstr
                 is_training = get_current_tower_context().is_training
                 load_model(model_path)
                 images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('sub:0')
-                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph(
+                ).get_tensor_by_name(output_name)
                 for k, file in enumerate(imgs):
                     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
                     img = Image.fromarray(img)
@@ -512,29 +545,36 @@ def enhancement_whole_image(model_path, sample_path, imgs, output_name='reconstr
                     img = np.expand_dims(img, axis=2)
                     img = np.expand_dims(img, axis=0)
                     feed_dict = {images_placeholder: img}
-                    minutiae_cylinder = sess.run(minutiae_cylinder_placeholder, feed_dict=feed_dict)
+                    minutiae_cylinder = sess.run(
+                        minutiae_cylinder_placeholder, feed_dict=feed_dict)
                     minutiae_cylinder = np.squeeze(minutiae_cylinder, axis=0)
                     minutiae_cylinder = np.squeeze(minutiae_cylinder, axis=2)
                     minV = np.min(minutiae_cylinder)
                     maxV = np.max(minutiae_cylinder)
-                    minutiae_cylinder = (minutiae_cylinder - minV) / (maxV - minV) * 255
-                    cv2.imwrite((sample_path + 'test_%03d.jpeg' % (k + 1)), minutiae_cylinder)
+                    minutiae_cylinder = (
+                        minutiae_cylinder - minV) / (maxV - minV) * 255
+                    cv2.imwrite((sample_path + 'test_%03d.jpeg' %
+                                (k + 1)), minutiae_cylinder)
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', help='comma separated list of GPU(s) to use.', default='1')
+    parser.add_argument(
+        '--gpu', help='comma separated list of GPU(s) to use.', default='1')
     parser.add_argument('--load', help='load model')
-    parser.add_argument('--enhance', action='store_true', help='enhance examples')
+    parser.add_argument('--enhance', action='store_true',
+                        help='enhance examples')
     parser.add_argument('--test_data', help='a jpeg directory',
                         default='/Data/Rolled/selected_rolled_prints/MI0479144T_07/')
     parser.add_argument('--sample_dir', help='directory for generated examples', type=str,
                         default='/AutomatedLatentRecognition/Enhancement_test')
     parser.add_argument('--data', help='a jpeg directory',
                         default='/markup/data/selected_rolled_prints/')
-    parser.add_argument('--load-size', help='size to load the original images', type=int)
+    parser.add_argument(
+        '--load-size', help='size to load the original images', type=int)
     parser.add_argument('--batch_size', help='batch size', type=int)
-    parser.add_argument('--crop-size', help='crop the original images', type=int)
+    parser.add_argument(
+        '--crop-size', help='crop the original images', type=int)
     parser.add_argument('--log_dir', help='directory to save checkout point', type=str,
                         default='/AutomatedLatentRecognition/models/Enhancement/AEC_net/Enhancement_AEC_128_depth_5/')
     args = parser.parse_args()
@@ -564,7 +604,8 @@ if __name__ == '__main__':
     args = get_args()
     print(args)
     if args.enhance and args.load:
-        imgs = ['/Data/Rolled/selected_rolled_prints/MI0479144T_07/low_02_A103585608W_07.bmp']
+        imgs = [
+            '/Data/Rolled/selected_rolled_prints/MI0479144T_07/low_02_A103585608W_07.bmp']
         enhancement2(args.load, args.sample_dir, imgs)
     else:
         config = get_config(args.log_dir, args.data)
