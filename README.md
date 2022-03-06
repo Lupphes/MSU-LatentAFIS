@@ -57,13 +57,10 @@ source venv/bin/activate
 pip3 install -r requirements.txt
 ```
 
-Change ``` afis.config ``` file for your custom path. Relative path doesn't work. (yet)
+Change ``` afis.config ``` file for your custom path.
 
 ### Template Extraction
-There are two scripts to do this extraction - one for the latent images (```latentafis/extraction/msu_latentafis/extraction_latent.py```), and one for the rolled reference images (```latentafis/extraction/msu_latentafis/extraction_rolled.py```). 
-
-
-Or you can use the python package structure and call ```extraction/msu_latentafis/extraction_lat.py``` or ```extraction/msu_latentafis/extraction_roll.py``` which performs the same way.
+There are two scripts to do this extraction - one for the latent images ```extraction/msu_latentafis/extraction_lat.py``` and one for the rolled reference images ```extraction/msu_latentafis/extraction_roll.py```.
 The general format of the usage is the same for both:
 ```
 python scriptname.py --flag1=/path/to/a/folder/ --flag2=/path/to/another/folder/

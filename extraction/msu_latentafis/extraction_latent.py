@@ -215,7 +215,7 @@ class FeatureExtraction_Latent:
         label(mask, structures, output=labels)
         component_sizes = np.bincount(labels.ravel())
         component_sizes = sorted(component_sizes, reverse=True)
-        print(component_sizes) 
+        print(component_sizes)
 
         if len(component_sizes) > 1:
             min_size = component_sizes[1]
@@ -235,7 +235,8 @@ class FeatureExtraction_Latent:
 
         # Extracting minutiae from the STFT image
         if not edited_mnt:
-            mnt_stft = self.minu_model[0].run_whole_image(stft_img, minu_thr=0.05)
+            mnt_stft = self.minu_model[0].run_whole_image(
+                stft_img, minu_thr=0.05)
             minutiae_sets.append(mnt_stft)
 
             if show_minutiae:
@@ -250,7 +251,7 @@ class FeatureExtraction_Latent:
         # Extracting minutiae from the contrast enhanced STFT image
         if not edited_mnt:
             mnt_stft = self.minu_model[0].run_whole_image(ct_img_stft,
-                                                          minu_thr=0.1)        
+                                                          minu_thr=0.1)
             minutiae_sets.append(mnt_stft)
 
             if show_minutiae:
@@ -264,7 +265,8 @@ class FeatureExtraction_Latent:
 
         # Extracting minutiae from the enhanced image
         if not edited_mnt:
-            mnt_aec = self.minu_model[1].run_whole_image(aec_img, minu_thr=0.25)
+            mnt_aec = self.minu_model[1].run_whole_image(
+                aec_img, minu_thr=0.25)
             mnt_aec = self.remove_spurious_minutiae(mnt_aec, mask)
             minutiae_sets.append(mnt_aec)
 
@@ -335,7 +337,8 @@ class FeatureExtraction_Latent:
                                         fname=fname)
 
             # saving minutiae
-            fname = os.path.join(output_dir, "%s_enhctg_mnt2.txt" % img_name[0])
+            fname = os.path.join(
+                output_dir, "%s_enhctg_mnt2.txt" % img_name[0])
             save_minutiae(mnt_contrast, fname)
 
         # Enhance gaussian contrast image CENATAV
@@ -360,7 +363,8 @@ class FeatureExtraction_Latent:
         minutiae_sets.append(mnt_contrast)
 
         if show_minutiae:
-            fname = output_dir + os.path.splitext(name)[0] + '_enhctg_mnt2.jpeg'
+            fname = output_dir + \
+                os.path.splitext(name)[0] + '_enhctg_mnt2.jpeg'
             show.show_minutiae_sets(enh_contrast_img, [input_minu, mnt_contrast],
                                     mask=mask, block=block, fname=fname)
 
@@ -391,7 +395,8 @@ class FeatureExtraction_Latent:
                                         mask=mask, block=block, fname=fname)
 
             # saving minutiae
-            fname = os.path.join(output_dir, "%s_enhtext_mnt.txt" % img_name[0])
+            fname = os.path.join(
+                output_dir, "%s_enhtext_mnt.txt" % img_name[0])
             save_minutiae(mnt_texture, fname)
 
         # Enhance texture image CENATAV
@@ -419,7 +424,8 @@ class FeatureExtraction_Latent:
                                         mask=mask, block=block, fname=fname)
 
             # saving minutiae
-            fname = os.path.join(output_dir, "%s_enhtext_mnt2.txt" % img_name[0])
+            fname = os.path.join(
+                output_dir, "%s_enhtext_mnt2.txt" % img_name[0])
             save_minutiae(mnt_texture, fname)
 
         if edited_mnt:
@@ -457,7 +463,8 @@ class FeatureExtraction_Latent:
         minutiae_sets.append(mnt_texture)
 
         if show_minutiae:
-            fname = output_dir + os.path.splitext(name)[0] + '_enhtext_mnt2.jpeg'
+            fname = output_dir + \
+                os.path.splitext(name)[0] + '_enhtext_mnt2.jpeg'
             show.show_minutiae_sets(enh_texture_img, [input_minu, mnt_texture],
                                     mask=mask, block=block, fname=fname)
 
@@ -496,9 +503,11 @@ class FeatureExtraction_Latent:
                                         mask=mask, block=block, fname=fname)
 
             # saving minutiae
-            fname = os.path.join(output_dir, "%s_common1_mnt.txt" % img_name[0])
+            fname = os.path.join(
+                output_dir, "%s_common1_mnt.txt" % img_name[0])
             save_minutiae(mnt2, fname)
-            fname = os.path.join(output_dir, "%s_common2_mnt.txt" % img_name[0])
+            fname = os.path.join(
+                output_dir, "%s_common2_mnt.txt" % img_name[0])
             save_minutiae(mnt3, fname)
 
         # End minutiae extraction
@@ -671,7 +680,7 @@ def get_feature_extractor():
     global config
     if not config:
         dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        with open(dir_path + '/../afis.config') as config_file:
+        with open(dir_path + '/afis.config') as config_file:
             config = json.load(config_file)
 
     des_model_dirs = []
@@ -715,6 +724,8 @@ def main(image_dir, template_dir, edited_mnt=False):
                                  template_dir=template_dir,
                                  minu_path=config['MinuPath'],
                                  edited_mnt=edited_mnt)
+
+    return lf_latent
 
 
 def main_single_image(image_file, template_dir):
@@ -760,53 +771,53 @@ def parse_arguments(argv):
     return parser.parse_args(argv)
 
 
-if __name__ == '__main__':
-    # Parsing arguments
-    args = parse_arguments(sys.argv[1:])
+# if __name__ == '__main__':
+#     # Parsing arguments
+#     args = parse_arguments(sys.argv[1:])
 
-    # Working path
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#     # Working path
+#     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-    # Loading configuration file
-    with open(dir_path + '/afis.config') as config_file:
-        config = json.load(config_file)
+#     # Loading configuration file
+#     with open(dir_path + '/afis.config') as config_file:
+#         config = json.load(config_file)
 
-    # Setting GPUs to use
-    if args.gpu:
-        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+#     # Setting GPUs to use
+#     if args.gpu:
+#         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    if args.i:  # Handling a single image
+#     if args.i:  # Handling a single image
 
-        # Setting template directory
-        t_dir = args.tdir if args.tdir else config['LatentTemplateDirectory']
-        template_fname = main_single_image(args.i, t_dir)
+#         # Setting template directory
+#         t_dir = args.tdir if args.tdir else config['LatentTemplateDirectory']
+#         template_fname = main_single_image(args.i, t_dir)
 
-        print("Starting dimensionality reduction")
-        descriptor_DR.template_compression_single(
-            input_file=template_fname, output_dir=t_dir,
-            model_path=config['DimensionalityReductionModel'],
-            isLatent=True, config=None
-        )
-        print("Starting product quantization...")
-        descriptor_PQ.encode_PQ_single(
-            input_file=template_fname,
-            output_dir=t_dir, fprint_type='latent'
-        )
-        print("Exiting...")
+#         print("Starting dimensionality reduction")
+#         descriptor_DR.template_compression_single(
+#             input_file=template_fname, output_dir=t_dir,
+#             model_path=config['DimensionalityReductionModel'],
+#             isLatent=True, config=None
+#         )
+#         print("Starting product quantization...")
+#         descriptor_PQ.encode_PQ_single(
+#             input_file=template_fname,
+#             output_dir=t_dir, fprint_type='latent'
+#         )
+#         print("Exiting...")
 
-    else:   # Handling a directory of images
+#     else:   # Handling a directory of images
 
-        tdir = args.tdir if args.tdir else config['LatentTemplateDirectory']
-        main(args.idir, tdir, args.edited_mnt)
+#         tdir = args.tdir if args.tdir else config['LatentTemplateDirectory']
+#         main(args.idir, tdir, args.edited_mnt)
 
-        print("Starting dimensionality reduction...")
-        descriptor_DR.template_compression(
-            input_dir=tdir, output_dir=tdir,
-            model_path=config['DimensionalityReductionModel'],
-            isLatent=True, config=None
-        )
-        print("Starting product quantization...")
-        descriptor_PQ.encode_PQ(
-            input_dir=tdir, output_dir=tdir, fprint_type='latent'
-        )
-        print("Exiting...")
+#         print("Starting dimensionality reduction...")
+#         descriptor_DR.template_compression(
+#             input_dir=tdir, output_dir=tdir,
+#             model_path=config['DimensionalityReductionModel'],
+#             isLatent=True, config=None
+#         )
+#         print("Starting product quantization...")
+#         descriptor_PQ.encode_PQ(
+#             input_dir=tdir, output_dir=tdir, fprint_type='latent'
+#         )
+#         print("Exiting...")

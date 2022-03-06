@@ -22,7 +22,8 @@ def load_model(model, filename, cuda):
         else:
             for key in list(model):
                 state_dict[key] = torch.load(
-                    os.path.join(filename, 'model_%sD_%s.pth' % (key, os.path.basename(filename))),
+                    os.path.join(filename, 'model_%sD_%s.pth' %
+                                 (key, os.path.basename(filename))),
                     map_location=lambda storage, loc: storage
                 )
     elif os.path.isfile(filename):
@@ -113,7 +114,7 @@ def extract_features(model, dataloader, cuda):
 def template_compression(input_dir='', output_dir=None, model_path=None, isLatent=False, config=None):
     if not config and not (input_dir and model_path):
         dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        with open(dir_path + '/../afis.config') as config_file:
+        with open(dir_path + '/afis.config') as config_file:
             config = json.load(config_file)
     if not output_dir:
         output_dir = input_dir
@@ -176,7 +177,8 @@ def template_compression(input_dir='', output_dir=None, model_path=None, isLaten
                 norm = np.linalg.norm(features[k])
                 features[k] = features[k] / norm * 1.73
             T.texture_template[j].des = features.copy()
-            template.Template2Bin_Byte_TF_C(output_file, T, isLatent=isLatent, save_mask=False)
+            template.Template2Bin_Byte_TF_C(
+                output_file, T, isLatent=isLatent, save_mask=False)
 
 
 def template_compression_single(input_file='', output_dir=None, model_path=None, isLatent=True, config=None):
@@ -185,7 +187,7 @@ def template_compression_single(input_file='', output_dir=None, model_path=None,
         return
     if not config and not model_path:
         dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        with open(dir_path + '/../afis.config') as config_file:
+        with open(dir_path + '/afis.config') as config_file:
             config = json.load(config_file)
     if not output_dir:
         output_dir = os.path.dirname(input_file)
@@ -233,7 +235,8 @@ def template_compression_single(input_file='', output_dir=None, model_path=None,
             norm = np.linalg.norm(features[k])
             features[k] = features[k] / norm * 1.73
         T.texture_template[j].des = features.copy()
-        template.Template2Bin_Byte_TF_C(output_file, T, isLatent=isLatent, save_mask=False)
+        template.Template2Bin_Byte_TF_C(
+            output_file, T, isLatent=isLatent, save_mask=False)
 
 
 def parse_arguments(argv):
@@ -241,31 +244,36 @@ def parse_arguments(argv):
 
     parser.add_argument('--fprint_type', type=str, help='Type of fingerprint templates (latent or rolled)',
                         default='latent')
-    parser.add_argument('--output_dir', type=str, help='Path to directory where reduced templates should be saved')
-    parser.add_argument('--input_dir', type=str, help='Path to directory of templates to reduce (batch operation)')
-    parser.add_argument('--input_file', type=str, help='Path to single template file to be reduced')
-    parser.add_argument('--model_path', type=str, help='Path to dimensionality reduction model')
+    parser.add_argument('--output_dir', type=str,
+                        help='Path to directory where reduced templates should be saved')
+    parser.add_argument('--input_dir', type=str,
+                        help='Path to directory of templates to reduce (batch operation)')
+    parser.add_argument('--input_file', type=str,
+                        help='Path to single template file to be reduced')
+    parser.add_argument('--model_path', type=str,
+                        help='Path to dimensionality reduction model')
     return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
-
     args = parse_arguments(sys.argv[1:])
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    with open(dir_path + '/../afis.config') as config_file:
+    with open(dir_path + '/afis.config') as config_file:
         config = json.load(config_file)
 
     if args.fprint_type and args.input_dir:
         if not args.output_path:
             args.output_path = args.input_dir
         template_compression(input_dir=args.input_dir, output_path=args.output_path,
-                             model_path=(args.model_path if args.model_path else config['DimensionalityReductionModel']),
+                             model_path=(
+                                 args.model_path if args.model_path else config['DimensionalityReductionModel']),
                              isLatent=(True if (args.fprint_type).lower() == 'latent' else False))
     elif(args.fprint_type and args.input_file):
         if not args.output_path:
             args.output_path = os.path.dirname(args.input_file)
         template_compression_single(input_file=args.input_file, output_path=args.output_path,
-                                    model_path=(args.model_path if args.model_path else config['DimensionalityReductionModel']),
+                                    model_path=(
+                                        args.model_path if args.model_path else config['DimensionalityReductionModel']),
                                     isLatent=(True if (args.fprint_type).lower() == 'latent' else False))
     else:
         print("Using arguments from config file, assuming latent batch processing.")

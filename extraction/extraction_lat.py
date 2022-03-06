@@ -9,7 +9,7 @@ from msu_latentafis.extraction_latent import main_single_image, parse_arguments,
 args = parse_arguments(sys.argv[1:])
 
 # Working path
-dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Loading configuration file
 with open(dir_path + '/afis.config') as config_file:
@@ -39,9 +39,9 @@ if args.i:  # Handling a single image
     print("Exiting...")
 
 else:   # Handling a directory of images
-
+    print("DIRECTORY")
     tdir = args.tdir if args.tdir else config['LatentTemplateDirectory']
-    main(args.idir, tdir, args.edited_mnt)
+    test = main(args.idir, tdir, args.edited_mnt)
 
     print("Starting dimensionality reduction...")
     template_compression(
@@ -53,4 +53,6 @@ else:   # Handling a directory of images
     encode_PQ(
         input_dir=tdir, output_dir=tdir, fprint_type='latent'
     )
+
+    print(test.minu_model)
     print("Exiting...")

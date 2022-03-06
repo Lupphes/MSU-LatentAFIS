@@ -12,9 +12,11 @@ args = parse_arguments(sys.argv[1:])
 if args.gpu:
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
+# Working path
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 # Loading configuration file
-pwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-with open(pwd + '/afis.config') as config_file:
+with open(dir_path + '/afis.config') as config_file:
     config = json.load(config_file)
 
 # Setting descriptor model names
