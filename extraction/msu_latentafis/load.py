@@ -29,17 +29,21 @@ import re
 
 def load_model(model_dir, meta_file, ckpt_file):
     model_dir_exp = os.path.expanduser(model_dir)
-    saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
-    saver.restore(tf.get_default_session(), os.path.join(model_dir_exp, ckpt_file))
+    saver = tf.compat.v1.train.import_meta_graph(
+        os.path.abspath(os.path.join(model_dir_exp, meta_file)))
+    saver.restore(tf.get_default_session(),
+                  os.path.join(os.path.abspath(model_dir_exp), ckpt_file))
 
 
 def get_model_filenames(model_dir):
     files = os.listdir(model_dir)
     meta_files = [s for s in files if s.endswith('.meta')]
     if len(meta_files) == 0:
-        raise ValueError('No meta file found in the model directory (%s)' % model_dir)
+        raise ValueError(
+            'No meta file found in the model directory (%s)' % model_dir)
     elif len(meta_files) > 1:
-        raise ValueError('There should not be more than one meta file in the model directory (%s)' % model_dir)
+        raise ValueError(
+            'There should not be more than one meta file in the model directory (%s)' % model_dir)
     meta_file = meta_files[0]
     meta_files = [s for s in files if '.ckpt' in s]
     max_step = -1

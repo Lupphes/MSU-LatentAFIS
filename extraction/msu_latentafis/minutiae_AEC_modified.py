@@ -28,7 +28,7 @@ opt.BATCH = 128
 
 class ImportGraph():
     """Graph for extracting minutiae"""
-    
+
     def __init__(self, model_dir):
         # create local graph and use it in the session
         self.graph = tf.Graph()
@@ -36,20 +36,28 @@ class ImportGraph():
         self.weight = get_weights(128, 128, 12, sigma=None)
 
         with self.graph.as_default():
-            meta_file, ckpt_file = get_model_filenames(os.path.expanduser(model_dir))
+            meta_file, ckpt_file = get_model_filenames(
+                os.path.expanduser(model_dir))
             model_dir_exp = os.path.expanduser(model_dir)
-            saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
-            saver.restore(self.sess, os.path.join(model_dir_exp, ckpt_file))
 
-            self.images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')
+            saver = tf.compat.v1.train.import_meta_graph(
+                os.path.abspath(os.path.join(model_dir_exp, meta_file)))
+
+            saver.restore(self.sess, os.path.abspath(
+                ckpt_file))
+
+            self.images_placeholder = tf.compat.v1.get_default_graph(
+            ).get_tensor_by_name('QueueInput/input_deque:0')
             output_name = 'reconstruction/gen:0'
-            self.minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
+            self.minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph(
+            ).get_tensor_by_name(output_name)
             self.shape = self.minutiae_cylinder_placeholder.get_shape()
 
     def run(self, img, minu_thr=0.2):
         h, w = img.shape
         weight = get_weights(opt.SHAPE, opt.SHAPE, 12)
-        nrof_samples = len(range(0, h, opt.SHAPE // 2)) * len(range(0, w, opt.SHAPE // 2))
+        nrof_samples = len(range(0, h, opt.SHAPE // 2)) * \
+            len(range(0, w, opt.SHAPE // 2))
         patches = np.zeros((nrof_samples, opt.SHAPE, opt.SHAPE, 1))
         n = 0
         x = []
@@ -63,7 +71,8 @@ class ImportGraph():
                 patches[n, :, :, :] = patch
                 n = n + 1
         feed_dict = {self.images_placeholder: patches}
-        minutiae_cylinder_array = self.sess.run(self.minutiae_cylinder_placeholder, feed_dict=feed_dict)
+        minutiae_cylinder_array = self.sess.run(
+            self.minutiae_cylinder_placeholder, feed_dict=feed_dict)
         minutiae_cylinder = np.zeros((h, w, 12))
         minutiae_cylinder_array[:, -10:, :, :] = 0
         minutiae_cylinder_array[:, :10, :, :] = 0
@@ -75,9 +84,11 @@ class ImportGraph():
                 y[i]:y[i] + opt.SHAPE,
                 x[i]:x[i] + opt.SHAPE, :] + \
                 minutiae_cylinder_array[i] * weight
-        minutiae = prepare_data.get_minutiae_from_cylinder(minutiae_cylinder, thr=minu_thr)
+        minutiae = prepare_data.get_minutiae_from_cylinder(
+            minutiae_cylinder, thr=minu_thr)
 
-        minutiae = prepare_data.refine_minutiae(minutiae, dist_thr=10, ori_dist=np.pi / 4)
+        minutiae = prepare_data.refine_minutiae(
+            minutiae, dist_thr=10, ori_dist=np.pi / 4)
 
         minutiae = self.remove_crowded_minutiae(minutiae)
         minutiae = np.asarray(minutiae)
@@ -88,12 +99,15 @@ class ImportGraph():
         img = np.expand_dims(img, axis=2)
         img = np.expand_dims(img, axis=0)
         feed_dict = {self.images_placeholder: img}
-        minutiae_cylinder = self.sess.run(self.minutiae_cylinder_placeholder, feed_dict=feed_dict)
+        minutiae_cylinder = self.sess.run(
+            self.minutiae_cylinder_placeholder, feed_dict=feed_dict)
 
         minutiae_cylinder = np.squeeze(minutiae_cylinder, axis=0)
-        minutiae = prepare_data.get_minutiae_from_cylinder2(minutiae_cylinder, thr=minu_thr)
+        minutiae = prepare_data.get_minutiae_from_cylinder2(
+            minutiae_cylinder, thr=minu_thr)
 
-        minutiae = prepare_data.refine_minutiae(minutiae, dist_thr=10, ori_dist=np.pi / 4)
+        minutiae = prepare_data.refine_minutiae(
+            minutiae, dist_thr=10, ori_dist=np.pi / 4)
 
         minutiae = self.remove_crowded_minutiae(minutiae)
         if return_cylinder:
@@ -107,7 +121,8 @@ class ImportGraph():
 
         if type(rawMinu) == 'list':
             rawMinu = np.asarray(rawMinu)
-        dists = scipy.spatial.distance.cdist(rawMinu[:, :2], rawMinu[:, :2], 'euclidean')
+        dists = scipy.spatial.distance.cdist(
+            rawMinu[:, :2], rawMinu[:, :2], 'euclidean')
         minu_num = rawMinu.shape[0]
 
         flag = np.ones((minu_num,), bool)
@@ -135,6 +150,7 @@ class ImportGraph():
 
 class ImageFromFile_AutoEcoder_Prediction(RNGDataFlow):
     """ Produce images read from a list of files. """
+
     def __init__(self, files, channel=3, resize=None, shuffle=False):
         """
         Args:
@@ -176,6 +192,7 @@ class ImageFromFile_AutoEcoder_Prediction(RNGDataFlow):
 
 class ImageFromFile_AutoEcoder(RNGDataFlow):
     """ Produce images read from a list of files. """
+
     def __init__(self, files, channel=3, resize=None, shuffle=False):
         """
         Args:
@@ -231,7 +248,8 @@ class AEC_Model(ModelDesc):
         Assign self.g_vars to the parameters under scope `g_scope`,
         and same with self.d_vars.
         """
-        self.vars = tf.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
+        self.vars = tf.get_collection(
+            tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
         assert self.vars
 
     @auto_reuse_variable_scope
@@ -269,14 +287,16 @@ class AEC_Model(ModelDesc):
         self.cost = tf.nn.l2_loss(prediction - target, name="L2loss")
         add_moving_summary(self.cost)
         tf.summary.image('original', image_pos, max_outputs=30)
-        tf.summary.image('prediction', prediction[:, :, :, 0:3], max_outputs=30)
+        tf.summary.image(
+            'prediction', prediction[:, :, :, 0:3], max_outputs=30)
         tf.summary.image('target', target[:, :, :, 0:3], max_outputs=30)
 
         self.build_losses()
         self.collect_variables()
 
     def _get_optimizer(self):
-        lr = symbolic_functions.get_scalar_var('learning_rate', 1e-4, summary=True)
+        lr = symbolic_functions.get_scalar_var(
+            'learning_rate', 1e-4, summary=True)
         opt = tf.train.AdamOptimizer(lr, beta1=0.5, beta2=0.9)
         return opt
 
@@ -306,7 +326,8 @@ class Cao_Model(ModelDesc):
         Assign self.g_vars to the parameters under scope `g_scope`,
         and same with self.d_vars.
         """
-        self.vars = tf.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
+        self.vars = tf.get_collection(
+            tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
         assert self.vars
 
     @auto_reuse_variable_scope
@@ -338,14 +359,16 @@ class Cao_Model(ModelDesc):
         self.cost = tf.nn.l2_loss(prediction - target, name="L2loss")
         add_moving_summary(self.cost)
         tf.summary.image('original', image_pos, max_outputs=30)
-        tf.summary.image('prediction', prediction[:, :, :, 0:3], max_outputs=30)
+        tf.summary.image(
+            'prediction', prediction[:, :, :, 0:3], max_outputs=30)
         tf.summary.image('target', target[:, :, :, 0:3], max_outputs=30)
 
         self.build_losses()
         self.collect_variables()
 
     def _get_optimizer(self):
-        lr = symbolic_functions.get_scalar_var('learning_rate', 1e-4, summary=True)
+        lr = symbolic_functions.get_scalar_var(
+            'learning_rate', 1e-4, summary=True)
         opt = tf.train.AdamOptimizer(lr, beta1=0.5, beta2=0.9)
         return opt
 
@@ -376,7 +399,8 @@ class UNet_Model(ModelDesc):
         Assign self.g_vars to the parameters under scope `g_scope`,
         and same with self.d_vars.
         """
-        self.vars = tf.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
+        self.vars = tf.get_collection(
+            tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope)
         assert self.vars
 
     def reconstruction(self, imgs):
@@ -434,14 +458,16 @@ class UNet_Model(ModelDesc):
         self.cost = tf.nn.l2_loss(prediction - target, name="L2loss")
         add_moving_summary(self.cost)
         tf.summary.image('original', image_pos, max_outputs=30)
-        tf.summary.image('prediction', prediction[:, :, :, 0:3], max_outputs=30)
+        tf.summary.image(
+            'prediction', prediction[:, :, :, 0:3], max_outputs=30)
         tf.summary.image('target', target[:, :, :, 0:3], max_outputs=30)
 
         self.build_losses()
         self.collect_variables()
 
     def _get_optimizer(self):
-        lr = symbolic_functions.get_scalar_var('learning_rate', 1e-4, summary=True)
+        lr = symbolic_functions.get_scalar_var(
+            'learning_rate', 1e-4, summary=True)
         opt = tf.train.AdamOptimizer(lr, beta1=0.5, beta2=0.9)
         return opt
 
@@ -479,7 +505,8 @@ class AutoEncoderTrainer(Trainer):
 
         # by default, run one d_min after one g_min
         with tf.name_scope('optimize'):
-            rec_min = opt.minimize(model.loss, var_list=model.vars, name='g_op')
+            rec_min = opt.minimize(
+                model.loss, var_list=model.vars, name='g_op')
         self.train_op = rec_min
 
         super(AutoEncoderTrainer, self).__init__(config)
@@ -518,26 +545,30 @@ def minutiae_extraction3(model_path, sample_path, imgs, output_name='reconstruct
                 is_training = get_current_tower_context().is_training
                 load_model(model_path)
                 images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('sub:0')
-                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph(
+                ).get_tensor_by_name(output_name)
                 for k, file in enumerate(imgs):
                     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
                     h, w = img.shape
                     x = []
                     y = []
-                    nrof_samples = len(range(0, h, opt.SHAPE // 2)) * len(range(0, w, opt.SHAPE // 2))
+                    nrof_samples = len(range(0, h, opt.SHAPE // 2)) * \
+                        len(range(0, w, opt.SHAPE // 2))
                     patches = np.zeros((nrof_samples, opt.SHAPE, opt.SHAPE, 1))
                     n = 0
                     for i in range(0, h - opt.SHAPE + 1, opt.SHAPE // 2):
 
                         for j in range(0, w - opt.SHAPE + 1, opt.SHAPE // 2):
                             print(j)
-                            patch = img[i:i + opt.SHAPE, j:j + opt.SHAPE, np.newaxis]
+                            patch = img[i:i + opt.SHAPE,
+                                        j:j + opt.SHAPE, np.newaxis]
                             x.append(j)
                             y.append(i)
                             patches[n, :, :, :] = patch
                             n = n + 1
                     feed_dict = {images_placeholder: patches}
-                    minutiae_cylinder_array = sess.run(minutiae_cylinder_placeholder, feed_dict=feed_dict)
+                    minutiae_cylinder_array = sess.run(
+                        minutiae_cylinder_placeholder, feed_dict=feed_dict)
 
                     minutiae_cylinder = np.zeros((h, w, 12))
                     minutiae_cylinder_array[:, -10:, :, :] = 0
@@ -545,16 +576,18 @@ def minutiae_extraction3(model_path, sample_path, imgs, output_name='reconstruct
                     minutiae_cylinder_array[:, :, -10:, :] = 0
                     minutiae_cylinder_array[:, :, 10, :] = 0
                     for i in range(n):
-                        minutiae_cylinder[y[i]:y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] = minutiae_cylinder[y[i]
-                            :y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] + minutiae_cylinder_array[i] * weight
-                    minutiae = prepare_data.get_minutiae_from_cylinder(minutiae_cylinder, thr=0.1)
+                        minutiae_cylinder[y[i]:y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] = minutiae_cylinder[y[i]                                                                                                               :y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] + minutiae_cylinder_array[i] * weight
+                    minutiae = prepare_data.get_minutiae_from_cylinder(
+                        minutiae_cylinder, thr=0.1)
 
-                    minutiae = prepare_data.refine_minutiae(minutiae, dist_thr=10, ori_dist=np.pi / 4)
+                    minutiae = prepare_data.refine_minutiae(
+                        minutiae, dist_thr=10, ori_dist=np.pi / 4)
 
                     minutiae_sets = []
                     minutiae_sets.append(minutiae)
 
-                    fname = sample_path + os.path.basename(file)[:-4] + 'nms' + '.jpeg'
+                    fname = sample_path + \
+                        os.path.basename(file)[:-4] + 'nms' + '.jpeg'
                     prepare_data.show_minutiae_sets(img, minutiae_sets, ROI=None, fname=fname,
                                                     block=block)
                     print(n)
@@ -563,7 +596,8 @@ def minutiae_extraction3(model_path, sample_path, imgs, output_name='reconstruct
 def minutiae_extraction_latent(model_path, sample_path, imgs, output_name='reconstruction/gen:0', block=True):
     imgs = glob.glob('/Data/Latent/DB/NIST27/image/' + '*.bmp')
 
-    minu_files = glob.glob('/Data/Latent/DB/ManualInformation/NIST27/ManMinu/*.txt')
+    minu_files = glob.glob(
+        '/Data/Latent/DB/ManualInformation/NIST27/ManMinu/*.txt')
     minu_files.sort()
     imgs.sort()
 
@@ -578,8 +612,10 @@ def minutiae_extraction_latent(model_path, sample_path, imgs, output_name='recon
             with tf.compat.v1.Session() as sess:
                 is_training = get_current_tower_context().is_training
                 load_model(model_path)
-                images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')  # sub:0
-                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
+                images_placeholder = tf.compat.v1.get_default_graph(
+                ).get_tensor_by_name('QueueInput/input_deque:0')  # sub:0
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph(
+                ).get_tensor_by_name(output_name)
                 for k, file in enumerate(imgs):
                     print(file)
                     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
@@ -589,21 +625,24 @@ def minutiae_extraction_latent(model_path, sample_path, imgs, output_name='recon
                     h, w = img.shape
                     x = []
                     y = []
-                    nrof_samples = len(range(0, h, opt.SHAPE // 2)) * len(range(0, w, opt.SHAPE // 2))
+                    nrof_samples = len(range(0, h, opt.SHAPE // 2)) * \
+                        len(range(0, w, opt.SHAPE // 2))
                     patches = np.zeros((nrof_samples, opt.SHAPE, opt.SHAPE, 1))
                     n = 0
                     for i in range(0, h - opt.SHAPE + 1, opt.SHAPE // 2):
 
                         for j in range(0, w - opt.SHAPE + 1, opt.SHAPE // 2):
                             print(j)
-                            patch = img[i:i + opt.SHAPE, j:j + opt.SHAPE, np.newaxis]
+                            patch = img[i:i + opt.SHAPE,
+                                        j:j + opt.SHAPE, np.newaxis]
                             x.append(j)
                             y.append(i)
                             patches[n, :, :, :] = patch
                             n = n + 1
                         # print x[-1]
                     feed_dict = {images_placeholder: patches}
-                    minutiae_cylinder_array = sess.run(minutiae_cylinder_placeholder, feed_dict=feed_dict)
+                    minutiae_cylinder_array = sess.run(
+                        minutiae_cylinder_placeholder, feed_dict=feed_dict)
 
                     minutiae_cylinder = np.zeros((h, w, 12))
                     minutiae_cylinder_array[:, -10:, :, :] = 0
@@ -611,11 +650,12 @@ def minutiae_extraction_latent(model_path, sample_path, imgs, output_name='recon
                     minutiae_cylinder_array[:, :, -10:, :] = 0
                     minutiae_cylinder_array[:, :, 10, :] = 0
                     for i in range(n):
-                        minutiae_cylinder[y[i]:y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] = minutiae_cylinder[y[i]
-                            :y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] + minutiae_cylinder_array[i] * weight
-                    minutiae = prepare_data.get_minutiae_from_cylinder(minutiae_cylinder, thr=0.05)
+                        minutiae_cylinder[y[i]:y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] = minutiae_cylinder[y[i]                                                                                                               :y[i] + opt.SHAPE, x[i]:x[i] + opt.SHAPE, :] + minutiae_cylinder_array[i] * weight
+                    minutiae = prepare_data.get_minutiae_from_cylinder(
+                        minutiae_cylinder, thr=0.05)
 
-                    minutiae = prepare_data.refine_minutiae(minutiae, dist_thr=10, ori_dist=np.pi / 4)
+                    minutiae = prepare_data.refine_minutiae(
+                        minutiae, dist_thr=10, ori_dist=np.pi / 4)
 
                     minutiae_sets = []
                     minutiae_sets.append(minutiae)
@@ -625,7 +665,8 @@ def minutiae_extraction_latent(model_path, sample_path, imgs, output_name='recon
                     minutiae_sets.append(manu_minutiae)
 
                     fname = sample_path + os.path.basename(file)[:-4] + '.jpeg'
-                    prepare_data.show_minutiae_sets(img, minutiae_sets, ROI=None, fname=fname, block=block)
+                    prepare_data.show_minutiae_sets(
+                        img, minutiae_sets, ROI=None, fname=fname, block=block)
                     fname = sample_path + os.path.basename(file)[:-4] + '.txt'
                     np.savetxt(fname, minutiae_sets[0])
                     print(n)
@@ -639,20 +680,25 @@ def minutiae_whole_image(model_path, sample_path, imgs, output_name='reconstruct
             with tf.compat.v1.Session() as sess:
                 is_training = get_current_tower_context().is_training
                 load_model(model_path)
-                images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('QueueInput/input_deque:0')
-                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
+                images_placeholder = tf.compat.v1.get_default_graph(
+                ).get_tensor_by_name('QueueInput/input_deque:0')
+                minutiae_cylinder_placeholder = tf.compat.v1.get_default_graph(
+                ).get_tensor_by_name(output_name)
                 for n, file in enumerate(imgs):
                     img0 = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
                     img = img0 / 128.0 - 1
                     img = np.expand_dims(img, axis=2)
                     img = np.expand_dims(img, axis=0)
                     feed_dict = {images_placeholder: img}
-                    minutiae_cylinder = sess.run(minutiae_cylinder_placeholder, feed_dict=feed_dict)
+                    minutiae_cylinder = sess.run(
+                        minutiae_cylinder_placeholder, feed_dict=feed_dict)
 
                     minutiae_cylinder = np.squeeze(minutiae_cylinder, axis=0)
-                    minutiae = prepare_data.get_minutiae_from_cylinder(minutiae_cylinder, thr=0.25)
+                    minutiae = prepare_data.get_minutiae_from_cylinder(
+                        minutiae_cylinder, thr=0.25)
 
-                    minutiae = prepare_data.refine_minutiae(minutiae, dist_thr=10, ori_dist=np.pi / 4)
+                    minutiae = prepare_data.refine_minutiae(
+                        minutiae, dist_thr=10, ori_dist=np.pi / 4)
                     prepare_data.show_minutiae(img0, minutiae)
                     print(n)
 
@@ -685,7 +731,8 @@ def load_model(model):
         print('Metagraph file: %s' % meta_file)
         print('Checkpoint file: %s' % ckpt_file)
 
-        saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_exp, meta_file))
+        saver = tf.compat.v1.train.import_meta_graph(
+            os.path.join(model_exp, meta_file))
         saver.restore(tf.get_default_session(), ckpt_file)
 
 
@@ -693,9 +740,11 @@ def get_model_filenames(model_dir):
     files = os.listdir(model_dir)
     meta_files = [s for s in files if s.endswith('.meta')]
     if len(meta_files) == 0:
-        raise ValueError('No meta file found in the model directory (%s)' % model_dir)
+        raise ValueError(
+            'No meta file found in the model directory (%s)' % model_dir)
     elif len(meta_files) > 1:
-        raise ValueError('There should not be more than one meta file in the model directory (%s)' % model_dir)
+        raise ValueError(
+            'There should not be more than one meta file in the model directory (%s)' % model_dir)
     meta_file = meta_files[0]
     ckpt_file = tf.train.latest_checkpoint(model_dir)
     return meta_file, ckpt_file
@@ -733,17 +782,21 @@ def compare_AEM_with_MMM(model_path, img_path='/Data/Latent/NISTSD27/image/',
         input_minu[:, 2] = input_minu[:, 2] / 180.0 * np.pi
         minutiae_set.append(input_minu)
         print(i)
-        show.show_minutiae_sets(img, minutiae_set, mask=None, block=False, fname=fname)
+        show.show_minutiae_sets(
+            img, minutiae_set, mask=None, block=False, fname=fname)
         print(fname)
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', help='comma separated list of GPU(s) to use.', default='0')
-    parser.add_argument('--model', help='model for minutiae extraction.', type=str, default='AEC_Model')
+    parser.add_argument(
+        '--gpu', help='comma separated list of GPU(s) to use.', default='0')
+    parser.add_argument(
+        '--model', help='model for minutiae extraction.', type=str, default='AEC_Model')
     parser.add_argument('--load', help='load model',
                         default='/AutomatedLatentRecognition/models/Minutiae/AEC_net/minutiae_AEC_64_fcn_2/model-224000.index')
-    parser.add_argument('--inference', action='store_true', help='extract minutiae on input images')
+    parser.add_argument('--inference', action='store_true',
+                        help='extract minutiae on input images')
     parser.add_argument('--image_dir', help='a jpeg directory',
                         default='/AutomatedLatentRecognition/Data/minutiae_cylinder_uint8')
     parser.add_argument('--sample_dir', help='a jpeg directory',
@@ -751,9 +804,12 @@ def get_args():
     parser.add_argument('--data', help='a jpeg directory',
                         default='/AutomatedLatentRecognition/Data/minutiae_cylinder_uint8_MSPLatents_STFT/')
 
-    parser.add_argument('--load-size', help='size to load the original images', type=int)
-    parser.add_argument('--batch_size', help='batch size', type=int, default=128)
-    parser.add_argument('--crop-size', help='crop the original images', type=int)
+    parser.add_argument(
+        '--load-size', help='size to load the original images', type=int)
+    parser.add_argument('--batch_size', help='batch size',
+                        type=int, default=128)
+    parser.add_argument(
+        '--crop-size', help='crop the original images', type=int)
     parser.add_argument('--log_dir', help='directory to save checkout point', type=str,
                         default='/AutomatedLatentRecognition/models/Minutiae/AEC_net/minutiae_AEC_64_fcn_2_Latent_STFT/')
     args = parser.parse_args()

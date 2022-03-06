@@ -22,18 +22,23 @@ class ImportGraph():
         self.sess = tf.compat.v1.Session(graph=self.graph)
         with self.graph.as_default():
             # load minutiae model
-            meta_file, ckpt_file = load.get_model_filenames(os.path.expanduser(model_dir))
+            meta_file, ckpt_file = load.get_model_filenames(
+                os.path.expanduser(model_dir))
             model_dir_exp = os.path.expanduser(model_dir)
-            saver = tf.compat.v1.train.import_meta_graph(os.path.join(model_dir_exp, meta_file))
-            saver.restore(self.sess, os.path.join(model_dir_exp, ckpt_file))
+            saver = tf.compat.v1.train.import_meta_graph(
+                os.path.abspath(os.path.join(model_dir_exp, meta_file)))
+            saver.restore(self.sess, os.path.abspath(
+                ckpt_file))
 
             self.images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name(input_name)
-            self.phase_train_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name("phase_train:0")
+            self.phase_train_placeholder = tf.compat.v1.get_default_graph(
+            ).get_tensor_by_name("phase_train:0")
             self.embeddings = tf.compat.v1.get_default_graph().get_tensor_by_name(output_name)
             self.embedding_size = self.embeddings.get_shape()[1]
 
     def run(self, imgs):
-        feed_dict = {self.images_placeholder: imgs, self.phase_train_placeholder: False}
+        feed_dict = {self.images_placeholder: imgs,
+                     self.phase_train_placeholder: False}
         return self.sess.run(self.embeddings, feed_dict=feed_dict)
 
 
@@ -169,7 +174,8 @@ def minutiae_descriptor_extraction(img, minutiae, patch_types, models, patchInde
         return des
     for k, patch_type in enumerate(patch_types):
         embedding_size = models[k].embedding_size
-        patches = extract_patches(minutiae, img, patchIndexV, patch_type=patch_type, patch_size=patch_size)
+        patches = extract_patches(
+            minutiae, img, patchIndexV, patch_type=patch_type, patch_size=patch_size)
 
         nrof_patches = len(patches)
         emb_array = np.zeros((nrof_patches, embedding_size))
@@ -203,14 +209,16 @@ if __name__ == '__main__':
     print(img)
 
     num_minu = len(template.minu_template[0].minutiae)
-    patches = extract_patches(template.minu_template[0].minutiae, img, patchIndexV, patch_type=1)
+    patches = extract_patches(
+        template.minu_template[0].minutiae, img, patchIndexV, patch_type=1)
     for i in range(len(patches)):
         patch = patches[i, :, :, 0]
         plt.imshow(patch, cmap='gray')
         plt.show()
 
     num_minu = len(template.texture_template[0].minutiae)
-    patches = extract_patches(template.texture_template[0].minutiae, img, patchIndexV, patch_type=1)
+    patches = extract_patches(
+        template.texture_template[0].minutiae, img, patchIndexV, patch_type=1)
     for i in range(len(patches)):
         patch = patches[i, :, :, 0]
         plt.imshow(patch, cmap='gray')
