@@ -82,7 +82,8 @@ def show_minutiae(img, minutiae, mask=None, fname=None, block=True):
         ori = -minutiae[i][2]
         dx = math.cos(ori) * arrow_len
         dy = math.sin(ori) * arrow_len
-        ax.arrow(xx, yy, dx, dy, linewidth=1.5, head_width=0.05, head_length=0.1, fc='r', ec='r')
+        ax.arrow(xx, yy, dx, dy, linewidth=1.5, head_width=0.05,
+                 head_length=0.1, fc='r', ec='r')
     ax.set_xticks([])
     ax.set_yticks([])
 
@@ -126,15 +127,17 @@ def show_minutiae_sets(img, minutiae_sets, mask=None, fname=None, block=True):
         for i in range(0, minu_num):
             xx = minutiae[i, 0]
             yy = minutiae[i, 1]
-            circ = Circle((xx, yy), R[k], color=color[k], fill=False, linewidth=1.5)
+            circ = Circle((xx, yy), R[k], color=color[k],
+                          fill=False, linewidth=1.5)
             ax.add_patch(circ)
 
             ori = -minutiae[i, 2]
             dx = math.cos(ori) * arrow_len
             dy = math.sin(ori) * arrow_len
-            ax.arrow(xx, yy, dx, dy, linewidth=1.5, head_width=0.05, head_length=0.1, fc=color[k], ec=color[k])
+            ax.arrow(xx, yy, dx, dy, linewidth=1.5, head_width=0.05,
+                     head_length=0.1, fc=color[k], ec=color[k])
 
-    plt.show(block=block)
+    # plt.show(block=block)
     if fname is not None:
         fig.savefig(fname, dpi=600, bbox_inches='tight', pad_inches=0.0)
         plt.close()
