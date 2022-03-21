@@ -118,17 +118,13 @@ class FeatureExtraction_Latent:
 
     def feature_extraction_single_latent(self, img_file, output_dir=None,
                                          ppi=500, show_processes=False,
-                                         show_minutiae=False, minu_file=None,
+                                         show_minutiae=True, minu_file=None,
                                          edited_mnt=False):
         # Params
         block = False
         block_size = 16
 
-        show_minutiae = True
-
         # Loading images
-        # img0 = io.imread(img_file, pilmode='L')  # / 255.0
-        # img0 = io.imread(img_file, as_gray=True)
         img0 = cv2.imread(img_file, 0)
         img = img0.copy()
 
@@ -142,7 +138,7 @@ class FeatureExtraction_Latent:
         # Adjusting image size to block size
         img = preprocessing.adjust_image_size(img, block_size)
         name = os.path.basename(img_file)
-        root_name = output_dir + os.path.splitext(name)[0]
+        root_name = os.path.join(output_dir, name)
 
         # Starting timer for feature extraction
         start = timer()
@@ -363,8 +359,7 @@ class FeatureExtraction_Latent:
         minutiae_sets.append(mnt_contrast)
 
         if show_minutiae:
-            fname = output_dir + \
-                os.path.splitext(name)[0] + '_enhctg_mnt2.jpeg'
+            fname = root_name + '_enhctg_mnt2.jpeg'
             show.show_minutiae_sets(enh_contrast_img, [input_minu, mnt_contrast],
                                     mask=mask, block=block, fname=fname)
 
@@ -409,6 +404,7 @@ class FeatureExtraction_Latent:
         # saving binarized enhanced texture image CENATAV
         fname = os.path.join(output_dir, "%s_enhtext2_bin.%s" % img_name)
         bin_image = (enh_texture_img >= thr).astype(np.uint8) * 255
+        saved_bin_image = (enh_texture_img >= thr).astype(np.uint8) * 255
         bin_image[mask == 0] = 0
         cv2.imwrite(fname, bin_image)
 
@@ -463,8 +459,7 @@ class FeatureExtraction_Latent:
         minutiae_sets.append(mnt_texture)
 
         if show_minutiae:
-            fname = output_dir + \
-                os.path.splitext(name)[0] + '_enhtext_mnt2.jpeg'
+            fname = root_name + '_enhtext_mnt2.jpeg'
             show.show_minutiae_sets(enh_texture_img, [input_minu, mnt_texture],
                                     mask=mask, block=block, fname=fname)
 
@@ -487,28 +482,43 @@ class FeatureExtraction_Latent:
 
         # Common minutiae sets
         if not edited_mnt:
-            mnt2 = self.get_common_minutiae(minutiae_sets, thr=2)
-            mnt3 = self.get_common_minutiae(minutiae_sets, thr=3)
+            mnt1 = self.get_common_minutiae(minutiae_sets, thr=2)
+            mnt2 = self.get_common_minutiae(minutiae_sets, thr=3)
+            mnt3 = self.get_common_minutiae(minutiae_sets, thr=4)
+            mnt4 = self.get_common_minutiae(minutiae_sets, thr=5)
 
+            minutiae_sets.append(mnt4)
             minutiae_sets.append(mnt3)
             minutiae_sets.append(mnt2)
+            minutiae_sets.append(mnt1)
 
             if show_minutiae:
                 fname = root_name + '_common1_mnt.jpeg'
+                show.show_minutiae_sets(img, [input_minu, mnt1],
+                                        mask=mask, block=block, fname=fname)
+                fname = root_name + '_common2_mnt.jpeg'
                 show.show_minutiae_sets(img, [input_minu, mnt2],
                                         mask=mask, block=block, fname=fname)
-
-                fname = root_name + '_common2_mnt.jpeg'
+                fname = root_name + '_common3_mnt.jpeg'
                 show.show_minutiae_sets(img, [input_minu, mnt3],
+                                        mask=mask, block=block, fname=fname)
+                fname = root_name + '_common4_mnt.jpeg'
+                show.show_minutiae_sets(img, [input_minu, mnt4],
                                         mask=mask, block=block, fname=fname)
 
             # saving minutiae
             fname = os.path.join(
                 output_dir, "%s_common1_mnt.txt" % img_name[0])
-            save_minutiae(mnt2, fname)
+            save_minutiae(mnt1, fname)
             fname = os.path.join(
                 output_dir, "%s_common2_mnt.txt" % img_name[0])
+            save_minutiae(mnt2, fname)
+            fname = os.path.join(
+                output_dir, "%s_common3_mnt.txt" % img_name[0])
             save_minutiae(mnt3, fname)
+            fname = os.path.join(
+                output_dir, "%s_common4_mnt.txt" % img_name[0])
+            save_minutiae(mnt4, fname)
 
         # End minutiae extraction
         end = timer()
@@ -566,6 +576,17 @@ class FeatureExtraction_Latent:
             latent_template.add_texture_template(texture_template)
 
         end = timer()
+
+        self.minutiae_sets = minutiae_sets
+        self.common1 = mnt1
+        self.common2 = mnt2
+        self.common3 = mnt3
+        self.common4 = mnt4
+        self.virtual_des = virtual_des
+
+        self.mask = mask * 255  # Open CV conversion to display image
+        self.aec = aec_img.astype(np.uint8)
+        self.bin_image = saved_bin_image
 
         print('Time for texture template generation: %f' % (end - start))
         return latent_template, texture_template
@@ -650,10 +671,10 @@ class FeatureExtraction_Latent:
         for i, img_file in enumerate(img_files):
             print(i, img_file)
             img_name = os.path.basename(img_file)
-            if template_dir is not None:
-                fname = template_dir + os.path.splitext(img_name)[0] + '.dat'
-                if os.path.exists(fname):
-                    continue
+            # if template_dir is not None:
+            #     fname = template_dir + os.path.splitext(img_name)[0] + '.dat'
+            #     if os.path.exists(fname):
+            #         continue
 
             start = timeit.default_timer()
             if minu_path is not None and len(minu_files) > i:
@@ -670,9 +691,9 @@ class FeatureExtraction_Latent:
             stop = timeit.default_timer()
             # print(stop - start) random number
 
-            fname = template_dir + os.path.splitext(img_name)[0] + '.dat'
-            template.Template2Bin_Byte_TF_C(fname, latent_t,
-                                            isLatent=True)
+            # fname = template_dir + os.path.splitext(img_name)[0] + '.dat'
+            # template.Template2Bin_Byte_TF_C(fname, latent_t,
+            #                                 isLatent=True)
 
 
 def get_feature_extractor():
@@ -740,13 +761,14 @@ def main_single_image(image_file, template_dir):
     print("Starting feature extraction (single latent)...")
     l_template, _ = lf_latent.feature_extraction_single_latent(
         image_file, output_dir=template_dir, show_processes=False,
-        minu_file=None, show_minutiae=False
+        minu_file=None, show_minutiae=True
     )
-    path = os.path.splitext(os.path.basename(image_file))[0]
-    fname = template_dir + path + '.dat'
-    template.Template2Bin_Byte_TF_C(fname, l_template, isLatent=True)
+    # path = os.path.splitext(os.path.basename(image_file))[0]
+    # fname = template_dir + path + '.dat'
+    # template.Template2Bin_Byte_TF_C(fname, l_template, isLatent=True)
 
-    return fname
+    return lf_latent
+    # return fname
 
 
 def parse_arguments(argv):
@@ -769,55 +791,3 @@ def parse_arguments(argv):
                         help='Use edited minutiae')
 
     return parser.parse_args(argv)
-
-
-# if __name__ == '__main__':
-#     # Parsing arguments
-#     args = parse_arguments(sys.argv[1:])
-
-#     # Working path
-#     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-#     # Loading configuration file
-#     with open(dir_path + '/afis.config') as config_file:
-#         config = json.load(config_file)
-
-#     # Setting GPUs to use
-#     if args.gpu:
-#         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-
-#     if args.i:  # Handling a single image
-
-#         # Setting template directory
-#         t_dir = args.tdir if args.tdir else config['LatentTemplateDirectory']
-#         template_fname = main_single_image(args.i, t_dir)
-
-#         print("Starting dimensionality reduction")
-#         descriptor_DR.template_compression_single(
-#             input_file=template_fname, output_dir=t_dir,
-#             model_path=config['DimensionalityReductionModel'],
-#             isLatent=True, config=None
-#         )
-#         print("Starting product quantization...")
-#         descriptor_PQ.encode_PQ_single(
-#             input_file=template_fname,
-#             output_dir=t_dir, fprint_type='latent'
-#         )
-#         print("Exiting...")
-
-#     else:   # Handling a directory of images
-
-#         tdir = args.tdir if args.tdir else config['LatentTemplateDirectory']
-#         main(args.idir, tdir, args.edited_mnt)
-
-#         print("Starting dimensionality reduction...")
-#         descriptor_DR.template_compression(
-#             input_dir=tdir, output_dir=tdir,
-#             model_path=config['DimensionalityReductionModel'],
-#             isLatent=True, config=None
-#         )
-#         print("Starting product quantization...")
-#         descriptor_PQ.encode_PQ(
-#             input_dir=tdir, output_dir=tdir, fprint_type='latent'
-#         )
-#         print("Exiting...")

@@ -19,39 +19,18 @@ with open(dir_path + '/afis.config') as config_file:
 if args.gpu:
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-if args.i:  # Handling a single image
+tdir = args.tdir if args.tdir else config['LatentTemplateDirectory']
+test = main(args.idir, tdir, args.edited_mnt)
 
-    # Setting template directory
-    t_dir = args.tdir if args.tdir else config['LatentTemplateDirectory']
-    template_fname = main_single_image(args.i, t_dir)
+print("Starting dimensionality reduction...")
+template_compression(
+    input_dir=tdir, output_dir=tdir,
+    model_path=config['DimensionalityReductionModel'],
+    isLatent=True, config=None
+)
+print("Starting product quantization...")
+encode_PQ(
+    input_dir=tdir, output_dir=tdir, fprint_type='latent'
+)
 
-    print("Starting dimensionality reduction")
-    template_compression_single(
-        input_file=template_fname, output_dir=t_dir,
-        model_path=config['DimensionalityReductionModel'],
-        isLatent=True, config=None
-    )
-    print("Starting product quantization...")
-    encode_PQ_single(
-        input_file=template_fname,
-        output_dir=t_dir, fprint_type='latent'
-    )
-    print("Exiting...")
-
-else:   # Handling a directory of images
-    print("DIRECTORY")
-    tdir = args.tdir if args.tdir else config['LatentTemplateDirectory']
-    test = main(args.idir, tdir, args.edited_mnt)
-
-    print("Starting dimensionality reduction...")
-    template_compression(
-        input_dir=tdir, output_dir=tdir,
-        model_path=config['DimensionalityReductionModel'],
-        isLatent=True, config=None
-    )
-    print("Starting product quantization...")
-    encode_PQ(
-        input_dir=tdir, output_dir=tdir, fprint_type='latent'
-    )
-
-    print("Exiting...")
+print("Exiting...")
