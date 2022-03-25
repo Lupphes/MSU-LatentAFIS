@@ -5,6 +5,7 @@ import timeit
 import json
 import os
 import argparse
+import logging
 
 from timeit import default_timer as timer
 
@@ -77,13 +78,14 @@ class FeatureExtraction_Latent:
         self.dict, self.spacing, self.dict_all = maps[:3]
         self.dict_ori, self.dict_spacing = maps[3:]
 
-        print("Loading models, this may take some time...")
+        logging.info("Loading models, this may take some time...")
 
         if self.minu_model_dirs is not None:
             self.minu_model = []
             for i, minu_model_dir in enumerate(minu_model_dirs):
                 echo_info = (i + 1, len(minu_model_dirs), minu_model_dir)
-                print("Loading minutiae model (%d of %d ): %s" % echo_info)
+                logging.info(
+                    "Loading minutiae model (%d of %d ): %s" % echo_info)
                 model = minutiae_AEC.ImportGraph(minu_model_dir)
                 self.minu_model.append(model)
 
@@ -100,7 +102,8 @@ class FeatureExtraction_Latent:
             for i, model_dir in enumerate(des_model_dirs):
 
                 echo_info = (i + 1, len(des_model_dirs), model_dir)
-                print("Loading descriptor model (%d of %d ): %s" % echo_info)
+                logging.info(
+                    "Loading descriptor model (%d of %d ): %s" % echo_info)
 
                 dmodel = descriptor.ImportGraph(
                     model_dir, input_name="inputs:0",
@@ -110,11 +113,12 @@ class FeatureExtraction_Latent:
                 self.des_models.append(dmodel)
 
         if self.enhancement_model_dir is not None:
-            print("Loading enhancement model: " + self.enhancement_model_dir)
+            logging.info("Loading enhancement model: " +
+                         self.enhancement_model_dir)
             emodel = enhancement_AEC.ImportGraph(enhancement_model_dir)
             self.enhancement_model = emodel
 
-        print("Finished loading models.")
+        logging.info("Finished loading models.")
 
     def feature_extraction_single_latent(self, img_file, output_dir=None,
                                          ppi=500, show_processes=False,
@@ -211,7 +215,7 @@ class FeatureExtraction_Latent:
         label(mask, structures, output=labels)
         component_sizes = np.bincount(labels.ravel())
         component_sizes = sorted(component_sizes, reverse=True)
-        print(component_sizes)
+        # logging.info(component_sizes)
 
         if len(component_sizes) > 1:
             min_size = component_sizes[1]
@@ -425,7 +429,7 @@ class FeatureExtraction_Latent:
             save_minutiae(mnt_texture, fname)
 
         if edited_mnt:
-            print("Using edited minutiae!!!")
+            logging.warn("Using edited minutiae!!!")
             mnt_filename = "%s.m" % img_file.split('.')[0]
             mnt = loadminutiae.load_edited_minutiae(mnt_filename)
             minutiae_sets.append(mnt)
@@ -522,7 +526,7 @@ class FeatureExtraction_Latent:
 
         # End minutiae extraction
         end = timer()
-        print('Time for minutiae extraction: %f' % (end - start))
+        logging.info('Time for minutiae extraction: %f' % (end - start))
 
         # Extracting minutiae descriptors
         start = timer()
@@ -538,7 +542,8 @@ class FeatureExtraction_Latent:
                 )
                 latent_template.add_minu_template(minu_template)
         end = timer()
-        print('Time for minutiae descriptor generation: %f' % (end - start))
+        logging.info('Time for minutiae descriptor generation: %f' %
+                     (end - start))
 
         # Virtual minutiae
         start = timer()
@@ -582,13 +587,13 @@ class FeatureExtraction_Latent:
         self.common2 = mnt2
         self.common3 = mnt3
         self.common4 = mnt4
-        self.virtual_des = virtual_des
 
         self.mask = mask * 255  # Open CV conversion to display image
         self.aec = aec_img.astype(np.uint8)
         self.bin_image = saved_bin_image
 
-        print('Time for texture template generation: %f' % (end - start))
+        logging.info('Time for texture template generation: %f' %
+                     (end - start))
         return latent_template, texture_template
 
     def get_common_minutiae(self, minutiae_sets, thr=3):
@@ -669,7 +674,7 @@ class FeatureExtraction_Latent:
             minu_files.sort()
 
         for i, img_file in enumerate(img_files):
-            print(i, img_file)
+            logging.info(i, img_file)
             img_name = os.path.basename(img_file)
             # if template_dir is not None:
             #     fname = template_dir + os.path.splitext(img_name)[0] + '.dat'
@@ -689,7 +694,7 @@ class FeatureExtraction_Latent:
                 )
 
             stop = timeit.default_timer()
-            # print(stop - start) random number
+            # logging.info(stop - start) random number
 
             # fname = template_dir + os.path.splitext(img_name)[0] + '.dat'
             # template.Template2Bin_Byte_TF_C(fname, latent_t,
@@ -740,7 +745,7 @@ def main(image_dir, template_dir, edited_mnt=False):
     if not os.path.exists(template_dir):
         os.makedirs(template_dir)
 
-    print("Starting feature extraction (batch)...")
+    logging.info("Starting feature extraction (batch)...")
     lf_latent.feature_extraction(image_dir=image_dir,
                                  template_dir=template_dir,
                                  minu_path=config['MinuPath'],
@@ -757,8 +762,8 @@ def main_single_image(image_file, template_dir):
     if not os.path.exists(template_dir):
         os.makedirs(template_dir)
 
-    print("Latent query: " + image_file)
-    print("Starting feature extraction (single latent)...")
+    logging.info("Latent query: " + image_file)
+    logging.info("Starting feature extraction (single latent)...")
     l_template, _ = lf_latent.feature_extraction_single_latent(
         image_file, output_dir=template_dir, show_processes=False,
         minu_file=None, show_minutiae=True
