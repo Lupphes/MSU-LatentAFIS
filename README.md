@@ -1,3 +1,6 @@
+# Rewritten code here
+https://github.com/Lupphes/LatentFingerprintGrader
+
 # MSU Latent Automatic Fingerprint Identification System (AFIS) <img src="uploads/latent_afis.jpeg" width="50"/>
 A system for identifying latent fingerprints. **Note: This software is no longer being updated or maintained.**
 
